@@ -24,9 +24,9 @@ export default function Navigation() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <Link href="/public/icon.svg" className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-lg">W</span>
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center">
+                <img src="/icon.svg" alt="WalkEnd WeekEnd" className="w-6 h-6" />
               </div>
               <span className="text-2xl font-display font-bold text-accent hover:text-accent/80 transition-colors hidden sm:inline">
                 WalkEnd

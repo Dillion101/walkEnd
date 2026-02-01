@@ -231,7 +231,7 @@ export default function FAQPage() {
             >
               <CardContent className="pt-6">
                 <div className="flex gap-4">
-                  <button className="text-muted-foreground hover:text-foreground">
+                  <button className="text-muted-foreground hover:text-foreground" title='button'>
                     <GripVertical className="w-5 h-5" />
                   </button>
                   <div className="flex-1">

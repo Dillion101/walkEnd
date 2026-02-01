@@ -216,7 +216,6 @@ export default function BlogPage() {
             <p className="text-muted-foreground">Create and publish blog posts</p>
           </div>
         </div>
-        </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button onClick={resetForm} className="bg-orange-500 hover:bg-orange-600">

@@ -168,7 +168,6 @@ export default function GalleryPage() {
             <p className="text-muted-foreground">Upload and manage event photos</p>
           </div>
         </div>
-        </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button onClick={resetForm} className="bg-orange-500 hover:bg-orange-600">
@@ -221,6 +220,7 @@ export default function GalleryPage() {
               <div>
                 <label className="block text-sm font-medium mb-1">Event (Optional)</label>
                 <select
+                  aria-label="Select an event"
                   value={formData.event_id}
                   onChange={(e) => setFormData({ ...formData, event_id: e.target.value })}
                   className="w-full px-3 py-2 border border-input rounded bg-background"

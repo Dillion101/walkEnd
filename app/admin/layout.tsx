@@ -79,7 +79,7 @@ export default function AdminLayout({
           )}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1 hover:bg-background rounded flex-shrink-0"
+            className="p-1 hover:bg-background rounded shrink-0"
           >
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>

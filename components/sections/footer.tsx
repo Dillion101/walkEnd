@@ -86,19 +86,19 @@ export default function Footer() {
             <h4 className="text-foreground font-semibold text-sm uppercase tracking-widest mb-6">Contact</h4>
             <ul className="space-y-3 text-sm">
               <li className="flex items-center gap-2 text-gray-400">
-                <Mail size={16} className="text-accent flex-shrink-0" />
-                <a href="mailto:info@walkend.com" className="hover:text-accent transition-colors">
-                  info@walkend.com
+                <Mail size={16} className="text-accent shrink-0" />
+                <a href="mailto:walkendweekend@gmail.com" className="hover:text-accent transition-colors">
+                  walkendweekend@gmail.com
                 </a>
               </li>
               <li className="flex items-center gap-2 text-gray-400">
-                <Phone size={16} className="text-accent flex-shrink-0" />
+                <Phone size={16} className="text-accent shrink-0" />
                 <a href="tel:+1234567890" className="hover:text-accent transition-colors">
                   +1 (234) 567-890
                 </a>
               </li>
               <li className="flex items-start gap-2 text-gray-400">
-                <MapPin size={16} className="text-accent flex-shrink-0 mt-0.5" />
+                <MapPin size={16} className="text-accent shrink-0 mt-0.5" />
                 <span>123 Runner Street<br />City, State 12345</span>
               </li>
             </ul>
@@ -110,7 +110,7 @@ export default function Footer() {
 
         {/* Bottom Footer */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-400">
-          <p>&copy; 2025 WalkEnd WeekEnd. All rights reserved.</p>
+          <p>&copy; 2026 WalkEnd WeekEnd. All rights reserved.</p>
 
           <div className="flex gap-6">
             <a href="#" className="hover:text-accent transition-colors">

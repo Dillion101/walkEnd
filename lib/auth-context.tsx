@@ -29,13 +29,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Try to load cached user data first to reduce loading time
+    const cachedUser = localStorage.getItem('walkend_user')
+    if (cachedUser) {
+      try {
+        const parsedUser = JSON.parse(cachedUser)
+        setUser(parsedUser)
+      } catch (e) {
+        console.error('Failed to parse cached user:', e)
+      }
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       if (session?.user) {
         fetchUserRole(session.user.id)
+      } else {
+        setLoading(false)
       }
-      setLoading(false)
     })
 
     // Listen for auth changes
@@ -44,9 +56,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session)
       if (session?.user) {
-        fetchUserRole(session.user.id)
+        await fetchUserRole(session.user.id)
       } else {
         setUser(null)
+        localStorage.removeItem('walkend_user')
+        setLoading(false)
       }
     })
 
@@ -63,15 +77,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error
 
-      setUser({
+      const userData = {
         id: data.id,
         email: data.email,
         role: data.role,
         full_name: data.full_name,
-      })
+      }
+      setUser(userData)
+      // Cache user data for faster loading on next refresh
+      localStorage.setItem('walkend_user', JSON.stringify(userData))
     } catch (error) {
       console.error('Error fetching user role:', error)
       setUser(null)
+      localStorage.removeItem('walkend_user')
+    } finally {
+      setLoading(false)
     }
   }
 

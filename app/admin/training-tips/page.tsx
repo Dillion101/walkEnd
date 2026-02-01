@@ -234,6 +234,7 @@ export default function TrainingTipsPage() {
               <div>
                 <label className="block text-sm font-medium mb-1">Category *</label>
                 <select
+                  aria-label="Select a category"
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="w-full px-3 py-2 border border-input rounded bg-background"
