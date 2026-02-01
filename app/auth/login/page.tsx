@@ -3,12 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import Navigation from '@/components/navigation'
+import Footer from '@/components/sections/footer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 import { Eye, EyeOff } from 'lucide-react'
-import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
@@ -41,7 +42,13 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password)
-      router.push('/admin')
+      
+      // Small delay to ensure user data is loaded
+      setTimeout(async () => {
+        const { signIn: _signIn } = await import('@/lib/auth-context').then(m => m.useAuth())
+        // The callback will handle the redirect, so we just need to wait
+        window.location.href = '/auth/callback'
+      }, 100)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
     } finally {
@@ -50,21 +57,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Image
-              src="/icon.svg"
-              alt="WalkEnd WeekEnd"
-              width={48}
-              height={48}
-              className="w-12 h-12"
-            />
-          </div>
-          <CardTitle>Admin Login</CardTitle>
-          <CardDescription>Sign in to access the admin dashboard</CardDescription>
-        </CardHeader>
+    <>
+      <Navigation />
+      <div className="min-h-screen bg-black pt-32 pb-20 flex items-center justify-center px-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <img src="/icon.svg" alt="WalkEnd WeekEnd" className="w-12 h-12" />
+            </div>
+            <CardTitle className="text-white">Login</CardTitle>
+            <CardDescription>Sign in to your account</CardDescription>
+          </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             {error && (
@@ -164,6 +167,8 @@ export default function LoginPage() {
           </p>
         </CardContent>
       </Card>
-    </div>
-  )
+      </div>
+      <Footer />
+    </>
+  );
 }

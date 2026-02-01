@@ -9,6 +9,7 @@ interface User {
   email: string
   role: 'admin' | 'user'
   full_name: string | null
+  phone_number?: string | null
 }
 
 interface AuthContextType {
@@ -23,6 +24,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Utility to add timeout to async functions
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error('Request timeout')), ms)
+    ),
+  ])
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState<User | null>(null)
@@ -33,22 +44,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const cachedUser = localStorage.getItem('walkend_user')
     if (cachedUser) {
       try {
-        const parsedUser = JSON.parse(cachedUser)
-        setUser(parsedUser)
+        const cacheData = JSON.parse(cachedUser)
+        const cacheAge = Date.now() - (cacheData.timestamp || 0)
+        const oneHour = 60 * 60 * 1000
+        
+        // Use cache if less than 1 hour old
+        if (cacheAge < oneHour) {
+          setUser(cacheData)
+        } else {
+          localStorage.removeItem('walkend_user')
+        }
       } catch (e) {
         console.error('Failed to parse cached user:', e)
+        localStorage.removeItem('walkend_user')
       }
     }
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      if (session?.user) {
-        fetchUserRole(session.user.id)
-      } else {
+    // Get initial session with timeout
+    let timeoutId: NodeJS.Timeout
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await withTimeout(
+          supabase.auth.getSession(),
+          5000
+        )
+        setSession(session)
+        if (session?.user) {
+          await fetchUserRole(session.user.id)
+        } else {
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error)
         setLoading(false)
       }
-    })
+    }
+
+    initAuth()
 
     // Listen for auth changes
     const {
@@ -64,16 +96,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     })
 
-    return () => subscription?.unsubscribe()
+    return () => {
+      subscription?.unsubscribe()
+      clearTimeout(timeoutId)
+    }
   }, [])
 
   async function fetchUserRole(userId: string) {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, email, role, full_name')
-        .eq('id', userId)
-        .single()
+      const { data, error } = await withTimeout(
+        supabase
+          .from('users')
+          .select('id, email, role, full_name, phone_number')
+          .eq('id', userId)
+          .single(),
+        5000 // 5 second timeout
+      )
 
       if (error) throw error
 
@@ -82,10 +120,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: data.email,
         role: data.role,
         full_name: data.full_name,
+        phone_number: data.phone_number,
       }
       setUser(userData)
-      // Cache user data for faster loading on next refresh
-      localStorage.setItem('walkend_user', JSON.stringify(userData))
+      // Cache user data for faster loading on next refresh (1 hour TTL)
+      const cacheData = {
+        ...userData,
+        timestamp: Date.now(),
+      }
+      localStorage.setItem('walkend_user', JSON.stringify(cacheData))
     } catch (error) {
       console.error('Error fetching user role:', error)
       setUser(null)
@@ -134,29 +177,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signIn(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const { error } = await withTimeout(
+        supabase.auth.signInWithPassword({
+          email,
+          password,
+        }),
+        5000
+      )
 
-    if (error) throw error
+      if (error) throw error
 
-    // Ensure user profile exists
-    const authUser = (await supabase.auth.getUser()).data.user
-    if (authUser) {
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('id')
-        .eq('id', authUser.id)
-        .single()
-
-      if (!existingUser) {
-        await supabase.from('users').insert({
-          id: authUser.id,
-          email: authUser.email,
-          role: 'user',
-        })
-      }
+      // fetchUserRole will be called automatically by onAuthStateChange listener
+      // No need for double query here
+    } catch (error) {
+      throw error
     }
   }
 

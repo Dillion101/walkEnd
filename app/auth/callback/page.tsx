@@ -2,6 +2,9 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Navigation from '@/components/navigation'
+import Footer from '@/components/sections/footer'
+import { Card } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 
 export default function CallbackPage() {
@@ -46,6 +49,8 @@ export default function CallbackPage() {
           throw fetchError
         }
 
+        const isNewUser = !userData
+
         if (!userData) {
           // Create user profile with all client details via API
           console.log('Creating user profile for:', user.id)
@@ -71,9 +76,28 @@ export default function CallbackPage() {
           console.log('User profile already exists')
         }
 
-        // Redirect to admin
-        console.log('Redirecting to /admin')
-        router.push('/admin')
+        // Get user profile
+        const { data: userProfile } = await supabase
+          .from('users')
+          .select('phone_number, role')
+          .eq('id', user.id)
+          .single()
+
+        // For new Google OAuth users without phone number, go to onboarding (only on signup)
+        if (isNewUser && userProfile?.role === 'user' && !userProfile?.phone_number && user.app_metadata?.provider === 'google') {
+          console.log('Redirecting to onboarding for new Google OAuth user')
+          router.push('/onboarding')
+          return
+        }
+
+        // Redirect based on role
+        if (userProfile?.role === 'admin') {
+          console.log('Redirecting admin to /admin')
+          router.push('/admin')
+        } else {
+          console.log('Redirecting user to /event-calendar')
+          router.push('/event-calendar')
+        }
       } catch (err) {
         console.error('Callback error:', err)
         const errorMsg = err instanceof Error ? err.message : String(err)
@@ -85,11 +109,18 @@ export default function CallbackPage() {
   }, [router])
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold mb-2">Completing sign in...</h1>
-        <p className="text-muted-foreground">Please wait while we redirect you.</p>
+    <>
+      <Navigation />
+      <div className="min-h-screen bg-black pt-32 pb-20 flex items-center justify-center px-4">
+        <Card className="w-full max-w-md p-8 text-center">
+          <div className="flex justify-center mb-4">
+            <img src="/icon.svg" alt="WalkEnd WeekEnd" className="w-12 h-12" />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-2">Completing sign in...</h1>
+          <p className="text-gray-400">Please wait while we redirect you.</p>
+        </Card>
       </div>
-    </div>
+      <Footer />
+    </>
   )
 }

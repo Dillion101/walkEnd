@@ -3,12 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import Navigation from '@/components/navigation'
+import Footer from '@/components/sections/footer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 import { Eye, EyeOff } from 'lucide-react'
-import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 
 export default function SignupPage() {
@@ -57,9 +58,9 @@ export default function SignupPage() {
       await signUp(email, password)
       setSuccess(true)
       
-      // Redirect to admin after 1.5 seconds
+      // Redirect to join-run after 1.5 seconds
       setTimeout(() => {
-        router.push('/admin')
+        router.push('/join-run')
       }, 1500)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Signup failed')
@@ -70,39 +71,39 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Signup Successful!</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
+      <>
+        <Navigation />
+        <div className="min-h-screen bg-black pt-32 pb-20 flex items-center justify-center px-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle className="text-white">Welcome!</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-400 mb-4">
               Your account has been created and profile configured.
             </p>
-            <p className="text-xs text-muted-foreground">
-              Redirecting to admin panel...
+            <p className="text-xs text-gray-500">
+              Redirecting to your account...
             </p>
           </CardContent>
         </Card>
-      </div>
+        </div>
+        <Footer />
+      </>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <>
+      <Navigation />
+      <div className="min-h-screen bg-black pt-32 pb-20 flex items-center justify-center px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <Image
-              src="/icon.svg"
-              alt="WalkEnd WeekEnd"
-              width={48}
-              height={48}
-              className="w-12 h-12"
-            />
+            <img src="/icon.svg" alt="WalkEnd WeekEnd" className="w-12 h-12" />
           </div>
-          <CardTitle>Create Account</CardTitle>
-          <CardDescription>Sign up to manage WalkEnd WeekEnd</CardDescription>
+          <CardTitle className="text-white">Create Account</CardTitle>
+          <CardDescription>Join our running community</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-4">
@@ -223,6 +224,8 @@ export default function SignupPage() {
           </p>
         </CardContent>
       </Card>
-    </div>
+      </div>
+      <Footer />
+    </>
   )
 }

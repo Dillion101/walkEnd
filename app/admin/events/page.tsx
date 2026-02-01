@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Textarea } from '@/components/ui/textarea'
 import { Trash2, Edit2, Plus } from 'lucide-react'
 import { uploadToCloudinary } from '@/lib/cloudinary'
+import { MapPicker } from './map-picker'
 
 interface Event {
   id: string
@@ -33,6 +34,8 @@ export default function EventsPage() {
   const [uploading, setUploading] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>('')
+  const [useMapPicker, setUseMapPicker] = useState(true)
+  const [showMapPicker, setShowMapPicker] = useState(false)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -258,31 +261,77 @@ export default function EventsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Latitude *</label>
-                  <Input
-                    type="number"
-                    step="0.00001"
-                    value={formData.latitude}
-                    onChange={(e) => setFormData({ ...formData, latitude: parseFloat(e.target.value) })}
-                    placeholder="40.785091"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Longitude *</label>
-                  <Input
-                    type="number"
-                    step="0.00001"
-                    value={formData.longitude}
-                    onChange={(e) => setFormData({ ...formData, longitude: parseFloat(e.target.value) })}
-                    placeholder="-73.968285"
-                    required
-                  />
+              <div>
+                <label className="block text-sm font-medium mb-3">Location Selection Method</label>
+                <div className="flex gap-2 mb-4">
+                  <Button
+                    type="button"
+                    variant={useMapPicker ? 'default' : 'outline'}
+                    onClick={() => setUseMapPicker(true)}
+                    className={useMapPicker ? 'bg-orange-500 hover:bg-orange-600' : ''}
+                  >
+                    Search on Map
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={!useMapPicker ? 'default' : 'outline'}
+                    onClick={() => setUseMapPicker(false)}
+                    className={!useMapPicker ? 'bg-orange-500 hover:bg-orange-600' : ''}
+                  >
+                    Manual Entry
+                  </Button>
                 </div>
               </div>
+
+              {useMapPicker ? (
+                <div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowMapPicker(!showMapPicker)}
+                    className="w-full mb-2"
+                  >
+                    {showMapPicker ? 'Hide Map' : 'Open Map Picker'}
+                  </Button>
+                  {showMapPicker && (
+                    <MapPicker
+                      initialLat={formData.latitude}
+                      initialLng={formData.longitude}
+                      initialLocationName={formData.location_name}
+                      onLocationSelect={(lat, lng, name) => {
+                        setFormData({ ...formData, latitude: lat, longitude: lng, location_name: name })
+                        setShowMapPicker(false)
+                      }}
+                    />
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Latitude *</label>
+                    <Input
+                      type="number"
+                      step="0.00001"
+                      value={formData.latitude}
+                      onChange={(e) => setFormData({ ...formData, latitude: parseFloat(e.target.value) })}
+                      placeholder="40.785091"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Longitude *</label>
+                    <Input
+                      type="number"
+                      step="0.00001"
+                      value={formData.longitude}
+                      onChange={(e) => setFormData({ ...formData, longitude: parseFloat(e.target.value) })}
+                      placeholder="-73.968285"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium mb-1">Event Image</label>

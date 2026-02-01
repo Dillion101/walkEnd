@@ -1,6 +1,8 @@
 'use client'
 
-import { Instagram, Twitter, Facebook, Mail, Phone, MapPin } from 'lucide-react'
+import { Mail, Phone, MapPin } from 'lucide-react'
+import { FaTiktok } from "react-icons/fa";
+import { FaXTwitter, FaInstagram } from "react-icons/fa6";
 
 export default function Footer() {
   return (
@@ -16,13 +18,13 @@ export default function Footer() {
             </p>
             <div className="flex gap-3">
               <a href="#" className="text-gray-400 hover:text-accent transition-colors">
-                <Instagram size={20} />
+                <FaInstagram size={20} />
               </a>
               <a href="#" className="text-gray-400 hover:text-accent transition-colors">
-                <Twitter size={20} />
+                <FaTiktok size={20} />
               </a>
               <a href="#" className="text-gray-400 hover:text-accent transition-colors">
-                <Facebook size={20} />
+                <FaXTwitter size={20} />
               </a>
             </div>
           </div>
@@ -32,22 +34,22 @@ export default function Footer() {
             <h4 className="text-foreground font-semibold text-sm uppercase tracking-widest mb-6">Quick Links</h4>
             <ul className="space-y-3 text-sm">
               <li>
-                <a href="#hero" className="text-gray-400 hover:text-accent transition-colors">
+                <a href="/" className="text-gray-400 hover:text-accent transition-colors">
                   Home
                 </a>
               </li>
               <li>
-                <a href="#next-run" className="text-gray-400 hover:text-accent transition-colors">
-                  Upcoming Runs
+                <a href="/event-calendar" className="text-gray-400 hover:text-accent transition-colors">
+                  Events
                 </a>
               </li>
               <li>
-                <a href="#gallery" className="text-gray-400 hover:text-accent transition-colors">
+                <a href="/gallery" className="text-gray-400 hover:text-accent transition-colors">
                   Gallery
                 </a>
               </li>
               <li>
-                <a href="#merchandise" className="text-gray-400 hover:text-accent transition-colors">
+                <a href="/merchandise" className="text-gray-400 hover:text-accent transition-colors">
                   Merchandise
                 </a>
               </li>
@@ -59,23 +61,23 @@ export default function Footer() {
             <h4 className="text-foreground font-semibold text-sm uppercase tracking-widest mb-6">Resources</h4>
             <ul className="space-y-3 text-sm">
               <li>
-                <a href="#" className="text-gray-400 hover:text-accent transition-colors">
+                <a href="/training-tips" className="text-gray-400 hover:text-accent transition-colors">
                   Training Tips
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-accent transition-colors">
-                  Event Calendar
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-400 hover:text-accent transition-colors">
+                <a href="/faq" className="text-gray-400 hover:text-accent transition-colors">
                   FAQ
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-accent transition-colors">
+                <a href="/blog" className="text-gray-400 hover:text-accent transition-colors">
                   Blog
+                </a>
+              </li>
+              <li>
+                <a href="/about" className="text-gray-400 hover:text-accent transition-colors">
+                  About Us
                 </a>
               </li>
             </ul>
@@ -93,13 +95,13 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2 text-gray-400">
                 <Phone size={16} className="text-accent shrink-0" />
-                <a href="tel:+1234567890" className="hover:text-accent transition-colors">
-                  +1 (234) 567-890
+                <a href="tel:+233501234567" className="hover:text-accent transition-colors">
+                  +233501234567
                 </a>
               </li>
               <li className="flex items-start gap-2 text-gray-400">
                 <MapPin size={16} className="text-accent shrink-0 mt-0.5" />
-                <span>123 Runner Street<br />City, State 12345</span>
+                <span>To The Road<br />And Beyond</span>
               </li>
             </ul>
           </div>
@@ -113,13 +115,10 @@ export default function Footer() {
           <p>&copy; 2026 WalkEnd WeekEnd. All rights reserved.</p>
 
           <div className="flex gap-6">
-            <a href="#" className="hover:text-accent transition-colors">
-              Privacy Policy
-            </a>
-            <a href="#" className="hover:text-accent transition-colors">
+            <a href="/legal/terms" className="hover:text-accent transition-colors">
               Terms of Service
             </a>
-            <a href="#" className="hover:text-accent transition-colors">
+            <a href="/legal/cookies" className="hover:text-accent transition-colors">
               Cookie Policy
             </a>
           </div>

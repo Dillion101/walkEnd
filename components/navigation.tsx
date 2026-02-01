@@ -35,19 +35,31 @@ export default function Navigation() {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
-            <button onClick={() => scrollToSection('next-run')} className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
-              Next Run
-            </button>
-            <button onClick={() => scrollToSection('gallery')} className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
+          <div className="hidden md:flex items-center gap-6">
+            <Link href="/" className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
+              Home
+            </Link>
+            <Link href="/event-calendar" className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
+              Events
+            </Link>
+            <Link href="/join-run" className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
+              Join Run
+            </Link>
+            <Link href="/gallery" className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
               Gallery
-            </button>
-            <button onClick={() => scrollToSection('merchandise')} className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
-              Merch
-            </button>
-            <button onClick={() => scrollToSection('footer')} className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
-              Contact
-            </button>
+            </Link>
+            <Link href="/blog" className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
+              Blog
+            </Link>
+            <Link href="/training-tips" className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
+              Tips
+            </Link>
+            <Link href="/faq" className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
+              FAQ
+            </Link>
+            <Link href="/merchandise" className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
+              Shop
+            </Link>
             <Link href="/about" className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
               About
             </Link>
@@ -55,18 +67,44 @@ export default function Navigation() {
 
           {/* Auth Section */}
           <div className="flex items-center gap-4">
-            {user && isAdmin && (
-              <>
-                <Link href="/admin" className="text-sm text-orange-500 hover:text-orange-600 hidden sm:inline">
-                  Admin
+            {user ? (
+              <div className="flex items-center gap-3 hidden sm:flex">
+                {isAdmin && (
+                  <Link href="/admin" className="text-sm text-orange-500 hover:text-orange-600">
+                    Admin
+                  </Link>
+                )}
+                <div className="flex items-center gap-2 pl-3 border-l border-border">
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-white">{user.full_name || user.email}</p>
+                    <p className="text-xs text-gray-400">{isAdmin ? 'Admin' : 'User'}</p>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-orange-500/20 border border-orange-500/50 flex items-center justify-center">
+                    <span className="text-sm font-bold text-orange-500">
+                      {(user.full_name || user.email)?.[0]?.toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => signOut()}
+                    className="ml-2 text-sm text-gray-400 hover:text-accent transition-colors"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 hidden sm:flex">
+                <Link href="/auth/login">
+                  <Button variant="outline" size="sm" className="text-sm">
+                    Sign In
+                  </Button>
                 </Link>
-                <button
-                  onClick={() => signOut()}
-                  className="text-sm uppercase tracking-wider hover:text-accent transition-colors hidden sm:inline"
-                >
-                  Logout
-                </button>
-              </>
+                <Link href="/auth/signup">
+                  <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-sm">
+                    Sign Up
+                  </Button>
+                </Link>
+              </div>
             )}
           </div>
 
@@ -81,32 +119,56 @@ export default function Navigation() {
         {/* Mobile Navigation */}
         {isOpen && (
           <div className="md:hidden pb-4 space-y-2 border-t border-border pt-4">
-            <button onClick={() => scrollToSection('next-run')} className="block w-full text-left px-4 py-2 text-sm uppercase tracking-wider hover:bg-card rounded transition-colors">
-              Next Run
-            </button>
-            <button onClick={() => scrollToSection('gallery')} className="block w-full text-left px-4 py-2 text-sm uppercase tracking-wider hover:bg-card rounded transition-colors">
-              Gallery
-            </button>
-            <button onClick={() => scrollToSection('merchandise')} className="block w-full text-left px-4 py-2 text-sm uppercase tracking-wider hover:bg-card rounded transition-colors">
-              Merch
-            </button>
-            <button onClick={() => scrollToSection('footer')} className="block w-full text-left px-4 py-2 text-sm uppercase tracking-wider hover:bg-card rounded transition-colors">
-              Contact
-            </button>
-            <Link href="/about" className="block w-full text-left px-4 py-2 text-sm uppercase tracking-wider hover:bg-card rounded transition-colors">
-              About
+            <Link href="/" className="block w-full text-left px-4 py-2 text-sm uppercase tracking-wider hover:bg-card rounded transition-colors">
+              Home
             </Link>
-            {user && isAdmin && (
+            <Link href="/event-calendar" className="block w-full text-left px-4 py-2 text-sm uppercase tracking-wider hover:bg-card rounded transition-colors">
+              Events
+            </Link>
+            <Link href="/join-run" className="block w-full text-left px-4 py-2 text-sm uppercase tracking-wider hover:bg-card rounded transition-colors">
+              Join Run
+            </Link>
+            <Link href="/gallery" className="block w-full text-left px-4 py-2 text-sm uppercase tracking-wider hover:bg-card rounded transition-colors">
+              Gallery
+            </Link>
+            <Link href="/blog" className="block w-full text-left px-4 py-2 text-sm uppercase tracking-wider hover:bg-card rounded transition-colors">
+              Blog
+            </Link>
+            <Link href="/training-tips" className="block w-full text-left px-4 py-2 text-sm uppercase tracking-wider hover:bg-card rounded transition-colors">
+              Tips
+            </Link>
+            <Link href="/faq" className="block w-full text-left px-4 py-2 text-sm uppercase tracking-wider hover:bg-card rounded transition-colors">
+              FAQ
+            </Link>
+            <Link href="/merchandise" className="block w-full text-left px-4 py-2 text-sm uppercase tracking-wider hover:bg-card rounded transition-colors">
+              Shop
+            </Link>
+            {user ? (
               <>
-                <Link href="/admin" className="block w-full text-left px-4 py-2 text-sm text-orange-500">
-                  Admin
-                </Link>
+                {isAdmin && (
+                  <Link href="/admin" className="block w-full text-left px-4 py-2 text-sm text-orange-500">
+                    Admin
+                  </Link>
+                )}
+                <div className="px-4 py-2 border-t border-border">
+                  <p className="text-sm font-medium text-white">{user.full_name || user.email}</p>
+                  <p className="text-xs text-gray-400 mb-2">{isAdmin ? 'Admin' : 'User'}</p>
+                </div>
                 <button
                   onClick={() => signOut()}
                   className="block w-full text-left px-4 py-2 text-sm uppercase tracking-wider hover:bg-card rounded transition-colors"
                 >
                   Logout
                 </button>
+              </>
+            ) : (
+              <>
+                <Link href="/auth/login" className="block w-full text-left px-4 py-2 text-sm uppercase tracking-wider hover:bg-card rounded transition-colors">
+                  Sign In
+                </Link>
+                <Link href="/auth/signup" className="block w-full text-left px-4 py-2 text-sm uppercase tracking-wider hover:bg-card rounded transition-colors">
+                  Sign Up
+                </Link>
               </>
             )}
           </div>
