@@ -2,6 +2,7 @@ import React from "react"
 import type { Metadata, Viewport } from 'next'
 import { Bebas_Neue, Work_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { AuthProvider } from '@/lib/auth-context'
 import './globals.css'
 
 const bebasNeue = Bebas_Neue({ weight: '400', subsets: ["latin"] });
@@ -44,8 +45,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${workSans.className} font-sans antialiased`}>
-        {children}
-        <Analytics />
+        <AuthProvider>
+          {children}
+          <Analytics />
+        </AuthProvider>
       </body>
     </html>
   )
