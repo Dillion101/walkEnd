@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import Link from 'next/link'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, Home, Calendar, ShoppingBag, Image as ImageIcon, BookOpen, HelpCircle, Lightbulb } from 'lucide-react'
 import Image from 'next/image'
 
 export default function AdminLayout({
@@ -38,13 +38,13 @@ export default function AdminLayout({
   }
 
   const adminLinks = [
-    { label: 'Dashboard', href: '/admin' },
-    { label: 'Events', href: '/admin/events' },
-    { label: 'Merchandise', href: '/admin/merchandise' },
-    { label: 'Gallery', href: '/admin/gallery' },
-    { label: 'Blog Posts', href: '/admin/blog' },
-    { label: 'FAQs', href: '/admin/faqs' },
-    { label: 'Training Tips', href: '/admin/training-tips' },
+    { label: 'Dashboard', href: '/admin', icon: Home },
+    { label: 'Events', href: '/admin/events', icon: Calendar },
+    { label: 'Merchandise', href: '/admin/merchandise', icon: ShoppingBag },
+    { label: 'Gallery', href: '/admin/gallery', icon: ImageIcon },
+    { label: 'Blog Posts', href: '/admin/blog', icon: BookOpen },
+    { label: 'FAQs', href: '/admin/faqs', icon: HelpCircle },
+    { label: 'Training Tips', href: '/admin/training-tips', icon: Lightbulb },
   ]
 
   return (
@@ -86,15 +86,20 @@ export default function AdminLayout({
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
-          {adminLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="block p-3 rounded hover:bg-background transition-colors text-sm"
-            >
-              {sidebarOpen ? link.label : link.label.charAt(0)}
-            </Link>
-          ))}
+          {adminLinks.map((link) => {
+            const Icon = link.icon
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex items-center gap-3 p-3 rounded hover:bg-background transition-colors text-sm"
+                title={link.label}
+              >
+                <Icon size={20} className="shrink-0" />
+                {sidebarOpen && <span>{link.label}</span>}
+              </Link>
+            )
+          })}
         </nav>
 
         <div className="p-4 border-t border-border text-xs text-muted-foreground">
@@ -104,12 +109,14 @@ export default function AdminLayout({
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-card border-b border-border px-6 py-4">
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Manage WalkEnd WeekEnd content</p>
+        <header className="bg-card border-b border-border px-4 sm:px-6 py-3 sm:py-4">
+          <h1 className="text-xl sm:text-2xl font-bold">Admin Dashboard</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Manage WalkEnd WeekEnd content</p>
         </header>
 
-        <main className="flex-1 overflow-auto p-6">
+        <main className={`flex-1 overflow-auto p-4 sm:p-6 transition-all duration-300 ${
+          sidebarOpen ? '' : 'blur-sm opacity-75'
+        }`}>
           {children}
         </main>
       </div>

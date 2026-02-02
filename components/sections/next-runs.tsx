@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { MapPin, Calendar, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Calendar, MapPin, ArrowRight } from 'lucide-react'
 
 interface Event {
   id: string
@@ -18,7 +18,7 @@ interface Event {
   image_url: string
 }
 
-export default function NextRun() {
+export default function NextRuns() {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -40,42 +40,25 @@ export default function NextRun() {
       setEvents(data || [])
     } catch (error) {
       console.error('Error fetching events:', error)
-      // Fallback to hardcoded data if DB fails
-      setEvents([
-        {
-          id: '1',
-          title: 'Urban Sprint',
-          description: 'A fast-paced 5K run through downtown',
-          date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-          location_name: 'Downtown Park',
-          latitude: 0,
-          longitude: 0,
-          image_url: '',
-        },
-      ])
     } finally {
       setLoading(false)
     }
   }
 
   if (loading) {
-    return (
-      <section className="w-full py-20 bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-400">
-          Loading upcoming runs...
-        </div>
-      </section>
-    )
+    return <div className="animate-pulse py-20 bg-card/50">Loading...</div>
   }
 
   if (events.length === 0) {
     return (
-      <section className="w-full py-20 bg-background">
+      <section className="w-full py-20 bg-gradient-to-b from-background to-card/50 border-t border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-16">
-            <span className="text-accent uppercase text-sm tracking-widest font-semibold">This Week</span>
-            <h2 className="text-5xl sm:text-6xl font-bold font-display mt-2">Upcoming Runs</h2>
-            <p className="text-gray-400 text-lg mt-4">Check back soon for our next scheduled event!</p>
+          <div className="text-center">
+            <h2 className="text-4xl sm:text-5xl font-bold font-display mb-4 animate-slide-up">No Upcoming Runs</h2>
+            <p className="text-gray-400 text-lg mb-8">Check back soon for our next scheduled event!</p>
+            <Link href="/event-calendar">
+              <Button className="bg-accent hover:bg-accent/90 text-background">View Full Calendar</Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -83,27 +66,31 @@ export default function NextRun() {
   }
 
   return (
-    <section id="next-run" className="w-full py-20 bg-background">
+    <section className="w-full py-20 bg-gradient-to-b from-background to-card/50 border-t border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-16 animate-fade-in">
-          <span className="text-accent uppercase text-sm tracking-widest font-semibold block animate-slide-up">This Week</span>
-          <h2 className="text-5xl sm:text-6xl font-bold font-display mt-2 animate-slide-up animation-delay-100">
+          <span className="text-accent uppercase text-sm tracking-widest font-semibold block animate-slide-up">Coming Soon</span>
+          <h2 className="text-5xl sm:text-6xl font-bold font-display mt-2 animate-slide-up" style={{ animationDelay: '0.1s' }}>
             Upcoming Runs
           </h2>
-          <p className="text-gray-400 text-lg mt-4 max-w-2xl animate-slide-up animation-delay-200">
-            Choose your pace and join our community on the streets. All levels welcome.
+          <p className="text-gray-400 text-lg mt-4 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+            Join us for our next weekly community run experience.
           </p>
         </div>
 
         {/* Events Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {events.map((event, index) => (
+          {events.map((event, idx) => (
             <Card
               key={event.id}
               className="overflow-hidden hover:border-accent transition-all duration-300 hover:shadow-lg hover:shadow-accent/20 animate-slide-in"
-              style={{ animationDelay: `${index * 100}ms` }}
+              style={{ animationDelay: `${idx * 100}ms` }}
             >
+              <div className="relative h-48 bg-gradient-to-br from-accent/20 to-accent/10 flex items-center justify-center overflow-hidden group">
+                <Calendar className="w-16 h-16 text-accent/30 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+
               <div className="p-6 space-y-4">
                 <div>
                   <h3 className="text-xl font-bold font-display text-white mb-2">{event.title}</h3>
@@ -139,7 +126,7 @@ export default function NextRun() {
         </div>
 
         {/* View All Button */}
-        <div className="text-center animate-slide-up animation-delay-300">
+        <div className="text-center animate-slide-up" style={{ animationDelay: '0.3s' }}>
           <Link href="/event-calendar">
             <Button variant="outline" className="border-accent hover:bg-accent/10 text-accent">
               View All Events <ArrowRight className="w-4 h-4 ml-2" />
@@ -191,19 +178,6 @@ export default function NextRun() {
 
         .animate-slide-in {
           animation: slideIn 0.6s ease-out forwards;
-          opacity: 0;
-        }
-
-        .animation-delay-100 {
-          animation-delay: 0.1s;
-        }
-
-        .animation-delay-200 {
-          animation-delay: 0.2s;
-        }
-
-        .animation-delay-300 {
-          animation-delay: 0.3s;
         }
       `}</style>
     </section>

@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MessageCircle } from 'lucide-react'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/sections/footer'
+import { Card } from '@/components/ui/card'
 
 interface Merchandise {
   id: string
@@ -42,7 +43,7 @@ export default function MerchandisePage() {
 
   function handleWhatsAppOrder(item: Merchandise) {
     const phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '1234567890'
-    const message = `Hi, I'm interested in ordering: ${item.name} (${item.price})`
+    const message = `Hi, I'm interested in ordering: ${item.name} ($${item.price})`
     const encodedMessage = encodeURIComponent(message)
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`
     window.open(whatsappUrl, '_blank')
@@ -52,9 +53,12 @@ export default function MerchandisePage() {
     return (
       <>
         <Navigation />
-        <main className="min-h-screen bg-black pt-20 py-12">
+        <main className="min-h-screen bg-background pt-24 pb-20">
           <div className="flex items-center justify-center">
-            <div className="text-white text-lg">Loading merchandise...</div>
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
+              <p className="text-gray-400">Loading merchandise...</p>
+            </div>
           </div>
         </main>
         <Footer />
@@ -65,70 +69,115 @@ export default function MerchandisePage() {
   return (
     <>
       <Navigation />
-      <main className="min-h-screen bg-black pt-20 py-12">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="space-y-8">
-            {/* Header */}
-            <div className="text-center py-12">
-              <div className="flex justify-center mb-6">
-                <img src="/icon.svg" alt="Logo" className="h-16 w-16" />
-              </div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">Shop</h1>
-              <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-                Support the community with exclusive WalkEnd WeekEnd merchandise
-              </p>
-            </div>
-
-            {/* Products Grid */}
-            {items.length === 0 ? (
-              <Card className="p-12 text-center bg-gray-900 border-gray-800">
-                <p className="text-gray-400 text-lg">No merchandise available yet. Check back soon!</p>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {items.map(item => (
-                  <Card key={item.id} className="overflow-hidden hover:shadow-xl hover:shadow-orange-500/20 transition-all flex flex-col bg-gray-900 border-gray-800">
-                    <div className="relative h-48 bg-gray-800 overflow-hidden">
-                      {item.image_url && (
-                        <img
-                          src={item.image_url}
-                          alt={item.name}
-                          className="w-full h-full object-cover hover:scale-105 transition-transform"
-                        />
-                      )}
-                    </div>
-                    <CardHeader className="flex-1">
-                      <CardTitle className="text-white">{item.name}</CardTitle>
-                      <CardDescription className="text-gray-400">{item.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-bold text-orange-500">${item.price}</span>
-                      </div>
-                      <Button
-                        onClick={() => handleWhatsAppOrder(item)}
-                        className="w-full bg-green-500 hover:bg-green-600 text-white"
-                      >
-                        <MessageCircle className="w-4 h-4 mr-2" />
-                        Order on WhatsApp
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-
-            {/* Info Box */}
-            <Card className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-6 mt-12">
-              <h3 className="font-bold text-orange-400 mb-2">💬 How to Order</h3>
-              <p className="text-gray-300">
-                Click the "Order on WhatsApp" button on any item and our team will help you complete your purchase. We'll confirm availability, discuss shipping options, and finalize payment.
-              </p>
-            </Card>
+      <main className="min-h-screen bg-background pt-24 pb-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="mb-16 animate-fade-in">
+            <h1 className="text-5xl sm:text-6xl font-bold font-display mb-4 text-white animate-slide-up">Shop</h1>
+            <p className="text-gray-400 text-lg max-w-2xl animate-slide-up animation-delay-100">
+              Support the community with exclusive WalkEnd WeekEnd merchandise
+            </p>
           </div>
+
+          {/* Products Grid */}
+          {items.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="text-gray-400 text-lg">No merchandise available at the moment</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {items.map((item, idx) => (
+                <Card
+                  key={item.id}
+                  className="overflow-hidden bg-card border border-border hover:border-accent hover:shadow-lg hover:shadow-accent/20 transition-all duration-300 flex flex-col animate-slide-in"
+                  style={{ animationDelay: `${idx * 100}ms` }}
+                >
+                  {/* Image */}
+                  <div className="relative aspect-square overflow-hidden bg-gray-900">
+                    <Image
+                      src={item.image_url || "/placeholder.svg"}
+                      alt={item.name}
+                      fill
+                      className="object-cover hover:scale-110 transition-transform duration-500"
+                    />
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-4 flex-1 flex flex-col">
+                    <h3 className="text-lg font-bold font-display text-white mb-2">{item.name}</h3>
+                    <p className="text-gray-400 text-sm mb-4 flex-1">{item.description}</p>
+                    <div className="flex items-baseline gap-2 mb-4">
+                      <span className="text-2xl font-bold text-accent">${typeof item.price === 'number' ? item.price.toFixed(2) : item.price}</span>
+                    </div>
+
+                    {/* WhatsApp Button */}
+                    <Button
+                      onClick={() => handleWhatsAppOrder(item)}
+                      className="w-full bg-accent hover:bg-accent/90 text-background font-semibold"
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Order via WhatsApp
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </main>
       <Footer />
+
+      <style>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-fade-in {
+          animation: fadeIn 0.6s ease-out;
+        }
+
+        .animate-slide-up {
+          animation: slideUp 0.6s ease-out forwards;
+          opacity: 0;
+        }
+
+        .animate-slide-in {
+          animation: slideIn 0.6s ease-out forwards;
+          opacity: 0;
+        }
+
+        .animation-delay-100 {
+          animation-delay: 0.1s;
+        }
+      `}</style>
     </>
   )
 }
+

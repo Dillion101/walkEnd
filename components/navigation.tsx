@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
@@ -9,6 +10,11 @@ import { Button } from '@/components/ui/button'
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const { user, signOut, isAdmin } = useAuth()
+  const pathname = usePathname()
+
+  const isActive = (href: string) => {
+    return pathname === href
+  }
 
   const scrollToSection = (id: string) => {
     setIsOpen(false)
@@ -36,31 +42,49 @@ export default function Navigation() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
-            <Link href="/" className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
+            <Link href="/" className={`text-sm uppercase tracking-wider transition-colors ${
+              isActive('/') ? 'text-accent font-bold' : 'text-foreground hover:text-accent'
+            }`}>
               Home
             </Link>
-            <Link href="/event-calendar" className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
+            <Link href="/event-calendar" className={`text-sm uppercase tracking-wider transition-colors ${
+              isActive('/event-calendar') ? 'text-accent font-bold' : 'text-foreground hover:text-accent'
+            }`}>
               Events
             </Link>
-            <Link href="/join-run" className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
+            <Link href="/join-run" className={`text-sm uppercase tracking-wider transition-colors ${
+              isActive('/join-run') ? 'text-accent font-bold' : 'text-foreground hover:text-accent'
+            }`}>
               Join Run
             </Link>
-            <Link href="/gallery" className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
+            <Link href="/gallery" className={`text-sm uppercase tracking-wider transition-colors ${
+              isActive('/gallery') ? 'text-accent font-bold' : 'text-foreground hover:text-accent'
+            }`}>
               Gallery
             </Link>
-            <Link href="/blog" className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
+            <Link href="/blog" className={`text-sm uppercase tracking-wider transition-colors ${
+              isActive('/blog') ? 'text-accent font-bold' : 'text-foreground hover:text-accent'
+            }`}>
               Blog
             </Link>
-            <Link href="/training-tips" className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
+            <Link href="/training-tips" className={`text-sm uppercase tracking-wider transition-colors ${
+              isActive('/training-tips') ? 'text-accent font-bold' : 'text-foreground hover:text-accent'
+            }`}>
               Tips
             </Link>
-            <Link href="/faq" className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
+            <Link href="/faq" className={`text-sm uppercase tracking-wider transition-colors ${
+              isActive('/faq') ? 'text-accent font-bold' : 'text-foreground hover:text-accent'
+            }`}>
               FAQ
             </Link>
-            <Link href="/merchandise" className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
+            <Link href="/merchandise" className={`text-sm uppercase tracking-wider transition-colors ${
+              isActive('/merchandise') ? 'text-accent font-bold' : 'text-foreground hover:text-accent'
+            }`}>
               Shop
             </Link>
-            <Link href="/about" className="text-sm uppercase tracking-wider hover:text-accent transition-colors">
+            <Link href="/about" className={`text-sm uppercase tracking-wider transition-colors ${
+              isActive('/about') ? 'text-accent font-bold' : 'text-foreground hover:text-accent'
+            }`}>
               About
             </Link>
           </div>

@@ -29,3 +29,18 @@ yarn-error.log*
 next-env.d.ts
 
 DirTree.md
+# Local development tracking - do NOT commit these
+TODO.md
+NOTES.md
+DEBUG.md
+PERSONAL.md
+
+# Temporary files
+*.tmp
+*.backup
+*.sql
+*.bak
+
+# Local environment backups
+.env.local.backup
+.env.*.local

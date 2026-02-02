@@ -147,7 +147,14 @@ export const emailTemplates = {
     `,
   }),
 
-  newEvent: (userEmail: string, eventTitle: string, eventDate: string): EmailTemplate => ({
+  newEvent: (
+    userEmail: string,
+    eventTitle: string,
+    eventDate: string,
+    eventLocation?: string,
+    eventDescription?: string,
+    imageUrl?: string
+  ): EmailTemplate => ({
     to: userEmail,
     subject: `New Run Scheduled: ${eventTitle} 🏃`,
     html: `
@@ -158,7 +165,11 @@ export const emailTemplates = {
             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: linear-gradient(135deg, #FF8C00 0%, #FF6B35 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; }
+            .event-image { width: 100%; max-width: 600px; height: auto; border-radius: 8px; margin: 20px 0; display: block; }
             .event-preview { background: #f5f5f5; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #FF8C00; }
+            .event-preview h3 { margin: 0 0 10px 0; color: #333; }
+            .event-detail { margin: 8px 0; }
+            .event-detail strong { color: #FF8C00; }
             .button { background: #FF8C00; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 10px 0; }
             .footer { text-align: center; font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px; }
           </style>
@@ -171,13 +182,16 @@ export const emailTemplates = {
             <div class="content">
               <p>Hey runner,</p>
               <p>We have a new run coming up that you might want to join:</p>
+              ${imageUrl ? `<img src="${imageUrl}" alt="${eventTitle}" class="event-image" />` : ''}
               <div class="event-preview">
                 <h3>${eventTitle}</h3>
-                <p><strong>Date:</strong> ${eventDate}</p>
+                <div class="event-detail"><strong>Date:</strong> ${eventDate}</div>
+                ${eventLocation ? `<div class="event-detail"><strong>Location:</strong> ${eventLocation}</div>` : ''}
+                ${eventDescription ? `<div class="event-detail"><strong>Description:</strong> ${eventDescription}</div>` : ''}
               </div>
               <p>Mark your calendar and join us!</p>
               <p>
-                <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://walkendweekend.com'}/events" class="button">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://walkendweekend.com'}/event-calendar" class="button">
                   View & Register
                 </a>
               </p>
@@ -235,7 +249,40 @@ export async function sendNewBlogPostEmail(userEmail: string, postTitle: string,
   return sendEmail(template)
 }
 
-export async function sendNewEventEmail(userEmail: string, eventTitle: string, eventDate: string) {
-  const template = emailTemplates.newEvent(userEmail, eventTitle, eventDate)
+export async function sendNewEventEmail(
+  userEmail: string,
+  eventTitle: string,
+  eventDate: string,
+  eventLocation?: string,
+  eventDescription?: string,
+  imageUrl?: string
+) {
+  const template = emailTemplates.newEvent(userEmail, eventTitle, eventDate, eventLocation, eventDescription, imageUrl)
   return sendEmail(template)
+}
+
+export async function sendEventNotificationToAll(
+  eventTitle: string,
+  eventDate: string,
+  userEmails: string[],
+  eventLocation?: string,
+  eventDescription?: string,
+  imageUrl?: string
+) {
+  try {
+    const promises = userEmails.map((email) =>
+      sendNewEventEmail(email, eventTitle, eventDate, eventLocation, eventDescription, imageUrl).catch((err) => {
+        console.error(`Failed to send email to ${email}:`, err)
+        return null
+      })
+    )
+
+    const results = await Promise.all(promises)
+    const successful = results.filter((r) => r !== null)
+    console.log(`Event notification sent to ${successful.length}/${userEmails.length} users`)
+    return successful
+  } catch (error) {
+    console.error('Error sending event notifications:', error)
+    throw error
+  }
 }

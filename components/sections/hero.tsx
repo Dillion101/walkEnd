@@ -41,27 +41,27 @@ export default function Hero() {
       {/* Content */}
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-start justify-center min-h-[calc(100vh-64px)]">
         <div className="space-y-6 max-w-2xl animate-fade-up">
-          <div className="inline-block">
+          <div className="inline-block animate-slide-in-left animation-delay-100">
             <span className="text-accent uppercase text-sm tracking-widest font-semibold">Weekly Running Community</span>
           </div>
 
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold font-display leading-tight text-white">
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold font-display leading-tight text-white animate-slide-in-left animation-delay-200">
             WalkEnd
             <br />
             WeekEnd
           </h1>
 
-          <p className="text-lg sm:text-xl text-gray-200 font-light max-w-xl leading-relaxed">
+          <p className="text-lg sm:text-xl text-gray-200 font-light max-w-xl leading-relaxed animate-slide-in-left animation-delay-300">
             Experience the thrill of running with our vibrant community. Join weekly runs, build friendships, and push your limits together.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 pt-8">
-            <button className="bg-accent text-background px-8 py-3 text-sm font-semibold uppercase tracking-wider hover:bg-accent/90 transition-colors">
+          <div className="flex flex-col sm:flex-row gap-4 pt-8 animate-slide-in-left animation-delay-400">
+            <a href="/join-run" className="bg-accent text-background px-8 py-3 text-sm font-semibold uppercase tracking-wider hover:bg-accent/90 hover:scale-105 transition-all duration-300 inline-block text-center">
               Join Next Run
-            </button>
-            <button className="border-2 border-white text-white px-8 py-3 text-sm font-semibold uppercase tracking-wider hover:bg-white/10 transition-colors">
+            </a>
+            <a href="/about" className="border-2 border-white text-white px-8 py-3 text-sm font-semibold uppercase tracking-wider hover:bg-white/10 hover:scale-105 transition-all duration-300 inline-block text-center">
               Learn More
-            </button>
+            </a>
           </div>
         </div>
 
@@ -83,8 +83,40 @@ export default function Hero() {
           }
         }
 
+        @keyframes slideInLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-40px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
         .animate-fade-up {
           animation: fadeUp 0.8s ease-out;
+        }
+
+        .animate-slide-in-left {
+          animation: slideInLeft 0.8s ease-out forwards;
+          opacity: 0;
+        }
+
+        .animation-delay-100 {
+          animation-delay: 0.1s;
+        }
+
+        .animation-delay-200 {
+          animation-delay: 0.2s;
+        }
+
+        .animation-delay-300 {
+          animation-delay: 0.3s;
+        }
+
+        .animation-delay-400 {
+          animation-delay: 0.4s;
         }
       `}</style>
     </section>

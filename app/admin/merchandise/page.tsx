@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Trash2, Edit2, Plus } from 'lucide-react'
-import { uploadToCloudinary } from '@/lib/cloudinary'
+import { uploadToCloudinary, deleteImageFromCloudinary } from '@/lib/cloudinary'
 
 interface Merchandise {
   id: string
@@ -86,6 +86,10 @@ export default function MerchandisePage() {
 
       // Upload image if selected
       if (imageFile) {
+        // If updating and there's an old image, delete it
+        if (editingId && formData.image_url) {
+          await deleteImageFromCloudinary(formData.image_url)
+        }
         const { url, publicId } = await uploadToCloudinary(imageFile)
         imageUrl = url
         imagePublicId = publicId
@@ -117,6 +121,27 @@ export default function MerchandisePage() {
         })
 
         if (error) throw error
+
+        // Send merchandise notification email
+        try {
+          const response = await fetch('/api/emails/send-merchandise-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              itemName: formData.name,
+              itemDescription: formData.description,
+              itemPrice: formData.price,
+              itemImageUrl: imageUrl,
+            }),
+          })
+
+          if (!response.ok) {
+            console.error('Failed to send merchandise notifications')
+          }
+        } catch (emailError) {
+          console.error('Error sending merchandise notifications:', emailError)
+          // Don't fail the item creation if email fails
+        }
       }
 
       resetForm()
@@ -134,6 +159,12 @@ export default function MerchandisePage() {
     if (!confirm('Are you sure you want to delete this item?')) return
 
     try {
+      // Find item to get image URL
+      const item = items.find(i => i.id === id)
+      if (item && item.image_url) {
+        await deleteImageFromCloudinary(item.image_url)
+      }
+
       const { error } = await supabase.from('merchandise').delete().eq('id', id)
       if (error) throw error
       await fetchMerchandise()
@@ -173,7 +204,7 @@ export default function MerchandisePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div className="flex items-center gap-3">
           <Image
             src="/icon.svg"
@@ -182,18 +213,18 @@ export default function MerchandisePage() {
             height={40}
           />
           <div>
-            <h2 className="text-3xl font-bold">Merchandise Management</h2>
-            <p className="text-muted-foreground">Add and manage merchandise items</p>
+            <h2 className="text-2xl sm:text-3xl font-bold">Merchandise Management</h2>
+            <p className="text-muted-foreground text-sm">Add and manage merchandise items</p>
           </div>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm} className="bg-orange-500 hover:bg-orange-600">
+            <Button onClick={resetForm} className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               New Item
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingId ? 'Edit Merchandise' : 'Create New Merchandise'}</DialogTitle>
               <DialogDescription>
@@ -267,7 +298,7 @@ export default function MerchandisePage() {
       </div>
 
       {/* Merchandise Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {items.length === 0 ? (
           <Card className="col-span-full">
             <CardContent className="pt-6">

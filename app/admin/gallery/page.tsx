@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Trash2, Plus } from 'lucide-react'
-import { uploadToCloudinary } from '@/lib/cloudinary'
+import { uploadToCloudinary, deleteImageFromCloudinary } from '@/lib/cloudinary'
 
 interface GalleryImage {
   id: string
@@ -155,7 +155,7 @@ export default function GalleryPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div className="flex items-center gap-3">
           <Image
             src="/icon.svg"
@@ -164,18 +164,18 @@ export default function GalleryPage() {
             height={40}
           />
           <div>
-            <h2 className="text-3xl font-bold">Gallery Management</h2>
-            <p className="text-muted-foreground">Upload and manage event photos</p>
+            <h2 className="text-2xl sm:text-3xl font-bold">Gallery Management</h2>
+            <p className="text-muted-foreground text-sm">Upload and manage event photos</p>
           </div>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm} className="bg-orange-500 hover:bg-orange-600">
+            <Button onClick={resetForm} className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Upload Images
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Upload Gallery Images</DialogTitle>
               <DialogDescription>Add multiple images from an event</DialogDescription>
@@ -267,7 +267,7 @@ export default function GalleryPage() {
       </div>
 
       {/* Gallery Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {images.length === 0 ? (
           <Card className="col-span-full">
             <CardContent className="pt-6">

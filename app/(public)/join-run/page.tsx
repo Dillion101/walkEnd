@@ -245,7 +245,7 @@ export default function JoinRunPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">{selectedEvent.title}</h3>
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
-                      <Calendar className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <Calendar className="w-5 h-5 text-orange-600 mt-0.5 shrink-0" />
                       <div>
                         <p className="text-sm font-medium text-gray-700">Date</p>
                         <p className="text-gray-600">
@@ -260,7 +260,7 @@ export default function JoinRunPage() {
                     </div>
 
                     <div className="flex items-start gap-3">
-                      <Clock className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <Clock className="w-5 h-5 text-orange-600 mt-0.5 shrink-0" />
                       <div>
                         <p className="text-sm font-medium text-gray-700">Time</p>
                         <p className="text-gray-600">{selectedEvent.time}</p>
@@ -268,7 +268,7 @@ export default function JoinRunPage() {
                     </div>
 
                     <div className="flex items-start gap-3">
-                      <MapPin className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <MapPin className="w-5 h-5 text-orange-600 mt-0.5 shrink-0" />
                       <div>
                         <p className="text-sm font-medium text-gray-700">Location</p>
                         <p className="text-gray-600">{selectedEvent.location}</p>

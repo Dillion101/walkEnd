@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Trash2, Edit2, Plus, Eye, EyeOff } from 'lucide-react'
-import { uploadToCloudinary } from '@/lib/cloudinary'
+import { uploadToCloudinary, deleteImageFromCloudinary } from '@/lib/cloudinary'
 
 interface BlogPost {
   id: string
@@ -128,6 +128,30 @@ export default function BlogPage() {
         })
 
         if (error) throw error
+
+        // Send blog notification email if published
+        if (formData.published) {
+          try {
+            const postUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://walkendweekend.com'}/blog/${formData.slug}`
+            const response = await fetch('/api/emails/send-blog-notification', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                postTitle: formData.title,
+                postExcerpt: formData.excerpt,
+                postUrl: postUrl,
+                featuredImageUrl: imageUrl,
+              }),
+            })
+
+            if (!response.ok) {
+              console.error('Failed to send blog notifications')
+            }
+          } catch (emailError) {
+            console.error('Error sending blog notifications:', emailError)
+            // Don't fail the post creation if email fails
+          }
+        }
       }
 
       resetForm()
@@ -203,7 +227,7 @@ export default function BlogPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div className="flex items-center gap-3">
           <Image
             src="/icon.svg"
@@ -212,18 +236,18 @@ export default function BlogPage() {
             height={40}
           />
           <div>
-            <h2 className="text-3xl font-bold">Blog Management</h2>
-            <p className="text-muted-foreground">Create and publish blog posts</p>
+            <h2 className="text-2xl sm:text-3xl font-bold">Blog Management</h2>
+            <p className="text-muted-foreground text-sm">Create and publish blog posts</p>
           </div>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm} className="bg-orange-500 hover:bg-orange-600">
+            <Button onClick={resetForm} className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               New Post
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingId ? 'Edit Post' : 'Create New Post'}</DialogTitle>
               <DialogDescription>

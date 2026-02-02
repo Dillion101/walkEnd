@@ -46,10 +46,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const cacheData = JSON.parse(cachedUser)
         const cacheAge = Date.now() - (cacheData.timestamp || 0)
-        const oneHour = 60 * 60 * 1000
+        // Cache for 7 days - session is managed by Supabase auth via cookies
+        // Sensitive data (passwords, keys) are never cached
+        const sevenDays = 7 * 24 * 60 * 60 * 1000
         
-        // Use cache if less than 1 hour old
-        if (cacheAge < oneHour) {
+        // Use cache if less than 7 days old
+        if (cacheAge < sevenDays) {
           setUser(cacheData)
         } else {
           localStorage.removeItem('walkend_user')

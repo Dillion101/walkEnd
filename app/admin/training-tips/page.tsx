@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Trash2, Edit2, Plus } from 'lucide-react'
-import { uploadToCloudinary } from '@/lib/cloudinary'
+import { uploadToCloudinary, deleteImageFromCloudinary } from '@/lib/cloudinary'
 
 interface TrainingTip {
   id: string
@@ -140,6 +140,12 @@ export default function TrainingTipsPage() {
     if (!confirm('Are you sure you want to delete this training tip?')) return
 
     try {
+      // Find tip to get image URL
+      const tip = tips.find(t => t.id === id)
+      if (tip && tip.image_url) {
+        await deleteImageFromCloudinary(tip.image_url)
+      }
+
       const { error } = await supabase.from('training_tips').delete().eq('id', id)
       if (error) throw error
       await fetchTips()
@@ -181,7 +187,7 @@ export default function TrainingTipsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div className="flex items-center gap-3">
           <Image
             src="/icon.svg"
@@ -190,18 +196,18 @@ export default function TrainingTipsPage() {
             height={40}
           />
           <div>
-            <h2 className="text-3xl font-bold">Training Tips Management</h2>
-            <p className="text-muted-foreground">Share running and training advice</p>
+            <h2 className="text-2xl sm:text-3xl font-bold">Training Tips Management</h2>
+            <p className="text-muted-foreground text-sm">Share running and training advice</p>
           </div>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm} className="bg-orange-500 hover:bg-orange-600">
+            <Button onClick={resetForm} className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               New Tip
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingId ? 'Edit Training Tip' : 'Create New Training Tip'}</DialogTitle>
               <DialogDescription>

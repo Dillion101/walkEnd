@@ -7,23 +7,25 @@ import Footer from '@/components/sections/footer';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Calendar, MapPin, Clock } from 'lucide-react';
+import { Calendar, MapPin, Clock, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 
 interface Event {
   id: string;
   title: string;
   description: string;
   date: string;
-  time: string;
-  location: string;
-  meetup_point: string;
+  location_name: string;
+  latitude: number;
+  longitude: number;
+  image_url: string;
 }
 
 interface CalendarDay {
   date: number;
-  hasEvent: boolean;
+  events: Event[];
   isCurrentMonth: boolean;
   isToday: boolean;
+  dateString: string;
 }
 
 export default function EventCalendarPage() {
@@ -32,7 +34,7 @@ export default function EventCalendarPage() {
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([]);
   const [loading, setLoading] = useState(true);
-  const [availableMonths, setAvailableMonths] = useState<string[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   // Fetch events
   useEffect(() => {
@@ -45,18 +47,14 @@ export default function EventCalendarPage() {
           .gte('date', today)
           .order('date', { ascending: true });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
         setEvents(data || []);
-
-        // Extract unique months
-        const months = new Set<string>();
-        data?.forEach((event) => {
-          const date = new Date(event.date);
-          months.add(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`);
-        });
-        setAvailableMonths(Array.from(months).sort());
       } catch (error) {
         console.error('Error fetching events:', error);
+        setEvents([]);
       } finally {
         setLoading(false);
       }
@@ -70,7 +68,6 @@ export default function EventCalendarPage() {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
 
-    // Get first day of month and number of days
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const daysInPrevMonth = new Date(year, month, 0).getDate();
@@ -83,9 +80,10 @@ export default function EventCalendarPage() {
     for (let i = firstDay - 1; i >= 0; i--) {
       days.push({
         date: daysInPrevMonth - i,
-        hasEvent: false,
+        events: [],
         isCurrentMonth: false,
-        isToday: false
+        isToday: false,
+        dateString: ''
       });
     }
 
@@ -95,25 +93,27 @@ export default function EventCalendarPage() {
       dayDate.setHours(0, 0, 0, 0);
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
       
-      const hasEvent = events.some(e => e.date.startsWith(dateStr));
+      const dayEvents = events.filter(e => e.date.startsWith(dateStr));
       const isToday = dayDate.getTime() === today.getTime();
 
       days.push({
         date: i,
-        hasEvent,
+        events: dayEvents,
         isCurrentMonth: true,
-        isToday
+        isToday,
+        dateString: dateStr
       });
     }
 
     // Next month days
-    const remainingDays = 42 - days.length; // 6 weeks * 7 days
+    const remainingDays = 42 - days.length;
     for (let i = 1; i <= remainingDays; i++) {
       days.push({
         date: i,
-        hasEvent: false,
+        events: [],
         isCurrentMonth: false,
-        isToday: false
+        isToday: false,
+        dateString: ''
       });
     }
 
@@ -133,176 +133,182 @@ export default function EventCalendarPage() {
   const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const [year, month] = e.target.value.split('-');
-    setCurrentMonth(new Date(parseInt(year), parseInt(month) - 1));
-  };
-
   const goToPreviousMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
+    setSelectedDate(null);
   };
 
   const goToNextMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
+    setSelectedDate(null);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading events...</p>
+      <>
+        <Navigation />
+        <div className="min-h-screen flex items-center justify-center bg-black pt-20">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
+            <p className="text-gray-400">Loading events...</p>
+          </div>
         </div>
-      </div>
+        <Footer />
+      </>
     );
   }
+
+  const getEventsForDate = (dateStr: string) => {
+    return events.filter(e => e.date.startsWith(dateStr));
+  };
 
   return (
     <>
       <Navigation />
-      <main className="min-h-screen bg-black pt-20 py-12">
-      <div className="container mx-auto px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <img src="/icon.svg" alt="WalkEnd WeekEnd" className="w-8 h-8" />
-              <h1 className="text-4xl font-bold text-white mb-0">Event Calendar</h1>
-            </div>
-            <p className="text-gray-400">Browse and register for upcoming runs</p>
+      <main className="min-h-screen bg-background pt-24 pb-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="mb-12 animate-fade-in">
+            <h1 className="text-5xl sm:text-6xl font-bold font-display text-white mb-4 animate-slide-up">Event Calendar</h1>
+            <p className="text-gray-400 text-lg max-w-2xl animate-slide-up animation-delay-100">
+              Discover and register for upcoming running events. All skill levels welcome.
+            </p>
           </div>
 
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Calendar Section */}
             <div className="lg:col-span-2">
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-white">{monthName}</h2>
-                  <div className="flex items-center gap-2">
+              <Card className="p-6 sm:p-8 bg-card border-border hover:border-accent/50 transition-all">
+                {/* Month Navigation */}
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-3xl font-bold font-display text-white">{monthName}</h2>
+                  <div className="flex items-center gap-3">
                     <button
                       onClick={goToPreviousMonth}
-                      className="p-2 hover:bg-gray-100 rounded-lg transition"
+                      className="p-2 hover:bg-accent/20 rounded-lg transition-all text-gray-400 hover:text-accent"
                       aria-label="Previous month"
+                      title="Previous month"
                     >
-                      ←
+                      <ChevronLeft className="w-6 h-6" />
                     </button>
-                    {availableMonths.length > 0 && (
-                      <select
-                        value={`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`}
-                        onChange={handleMonthChange}
-                        className="px-3 py-1 border border-gray-300 rounded-lg text-sm"
-                        aria-label="Select month"
-                      >
-                        {availableMonths.map(month => {
-                          const [year, monthNum] = month.split('-');
-                          const date = new Date(parseInt(year), parseInt(monthNum) - 1);
-                          return (
-                            <option key={month} value={month}>
-                              {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    )}
                     <button
                       onClick={goToNextMonth}
-                      className="p-2 hover:bg-gray-100 rounded-lg transition"
+                      className="p-2 hover:bg-accent/20 rounded-lg transition-all text-gray-400 hover:text-accent"
                       aria-label="Next month"
+                      title="Next month"
                     >
-                      →
+                      <ChevronRight className="w-6 h-6" />
                     </button>
                   </div>
                 </div>
 
                 {/* Calendar Grid */}
-                <div className="space-y-2">
-                  {/* Week days header */}
-                  <div className="grid grid-cols-7 gap-1 mb-2">
+                <div>
+                  {/* Weekday Headers */}
+                  <div className="grid grid-cols-7 gap-2 mb-4">
                     {weekDays.map(day => (
-                      <div key={day} className="text-center font-semibold text-sm text-gray-600 py-2">
+                      <div key={day} className="text-center font-semibold text-xs text-gray-400 py-3">
                         {day}
                       </div>
                     ))}
                   </div>
 
-                  {/* Calendar days */}
-                  <div className="grid grid-cols-7 gap-1">
+                  {/* Calendar Days */}
+                  <div className="grid grid-cols-7 gap-2">
                     {calendarDays.map((day, idx) => (
-                      <div
+                      <button
                         key={idx}
+                        onClick={() => {
+                          if (day.isCurrentMonth && day.dateString) {
+                            setSelectedDate(day.dateString);
+                          }
+                        }}
                         className={`
-                          aspect-square flex items-center justify-center rounded-lg font-medium text-sm cursor-default
-                          transition-colors
-                          ${day.isCurrentMonth ? 'bg-white border border-gray-200' : 'bg-gray-100 text-gray-400'}
-                          ${day.isToday ? 'bg-orange-100 text-orange-900 border-orange-300 border-2' : ''}
-                          ${day.hasEvent && day.isCurrentMonth ? 'bg-blue-50 border-2 border-blue-400' : ''}
-                          ${day.isCurrentMonth && !day.isToday && !day.hasEvent ? 'hover:bg-gray-50' : ''}
+                          aspect-square flex flex-col items-center justify-center rounded-lg font-semibold text-sm
+                          transition-all duration-200 relative group
+                          ${!day.isCurrentMonth ? 'bg-card/50 text-gray-600 cursor-default' : ''}
+                          ${day.isCurrentMonth && !day.isToday && !day.events.length ? 'bg-card border border-border hover:border-accent hover:bg-card/80 text-white cursor-pointer' : ''}
+                          ${day.isToday ? 'bg-gradient-to-br from-accent to-accent/80 text-background font-bold shadow-lg shadow-accent/50 ring-2 ring-accent/30' : ''}
+                          ${day.isCurrentMonth && day.events.length > 0 && !day.isToday ? 'bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-2 border-blue-400 text-white hover:from-blue-500/30 hover:to-blue-600/30 cursor-pointer' : ''}
                         `}
                       >
-                        {day.date}
-                      </div>
+                        <span>{day.date}</span>
+                        {day.events.length > 0 && (
+                          <span className={`text-xs ${day.isToday ? 'text-background/70' : 'text-blue-400'} font-medium`}>
+                            {day.events.length} run{day.events.length > 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </button>
                     ))}
                   </div>
                 </div>
 
                 {/* Legend */}
-                <div className="mt-6 pt-6 border-t space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-orange-100 border-2 border-orange-300 rounded"></div>
-                    <span className="text-gray-600">Today</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-blue-50 border-2 border-blue-400 rounded"></div>
-                    <span className="text-gray-600">Event scheduled</span>
+                <div className="mt-8 pt-6 border-t border-border space-y-3">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Legend</p>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 bg-gradient-to-br from-accent to-accent/80 rounded text-white flex items-center justify-center text-xs">✓</div>
+                      <span className="text-gray-300">Today</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-2 border-blue-400 rounded"></div>
+                      <span className="text-gray-300">Events scheduled</span>
+                    </div>
                   </div>
                 </div>
               </Card>
             </div>
 
-            {/* Events List Section */}
-            <div>
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  Events in {monthName}
+            {/* Events Sidebar */}
+            <div className="lg:col-span-1">
+              <Card className="p-6 sm:p-8 bg-card border-border sticky top-24">
+                <h3 className="text-xl font-bold font-display text-white mb-2">
+                  {selectedDate ? new Date(selectedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : `Events in ${monthName}`}
                 </h3>
+                <p className="text-gray-400 text-sm mb-6">
+                  {selectedDate && getEventsForDate(selectedDate).length === 0 ? 'No events scheduled for this day' : 'Register for upcoming runs'}
+                </p>
 
-                {filteredEvents.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500">No events scheduled this month</p>
+                {filteredEvents.length === 0 && !selectedDate ? (
+                  <div className="text-center py-12">
+                    <Calendar className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                    <p className="text-gray-400">No events scheduled</p>
                   </div>
                 ) : (
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {filteredEvents.map((event) => (
+                  <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                    {(selectedDate ? getEventsForDate(selectedDate) : filteredEvents).map((event) => (
                       <div
                         key={event.id}
-                        className="p-3 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition"
+                        className="p-4 border border-border bg-background/50 rounded-lg hover:border-accent hover:bg-background/80 transition-all duration-200 group"
                       >
-                        <h4 className="font-medium text-white text-sm mb-2">{event.title}</h4>
+                        <h4 className="font-bold text-white text-sm mb-3 group-hover:text-accent transition-colors">
+                          {event.title}
+                        </h4>
                         
-                        <div className="space-y-1 mb-3">
-                          <div className="flex items-center gap-2 text-xs text-gray-600">
-                            <Calendar className="w-3 h-3" />
-                            {new Date(event.date).toLocaleDateString('en-US', {
+                        <div className="space-y-2 mb-4">
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                            <Calendar className="w-4 h-4 text-accent flex-shrink-0" />
+                            <span>{new Date(event.date).toLocaleDateString('en-US', {
                               month: 'short',
                               day: 'numeric',
                               weekday: 'short'
-                            })}
+                            })}</span>
                           </div>
                           
-                          <div className="flex items-center gap-2 text-xs text-gray-600">
-                            <Clock className="w-3 h-3" />
-                            {event.time}
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                            <MapPin className="w-4 h-4 text-accent flex-shrink-0" />
+                            <span className="line-clamp-2">{event.location_name}</span>
                           </div>
-                          
-                          <div className="flex items-center gap-2 text-xs text-gray-600">
-                            <MapPin className="w-3 h-3" />
-                            <span className="line-clamp-1">{event.location}</span>
-                          </div>
+
+                          {event.description && (
+                            <p className="text-xs text-gray-500 line-clamp-2 mt-2">{event.description}</p>
+                          )}
                         </div>
 
-                        <Link href={`/join-run?event=${event.id}`}>
-                          <Button size="sm" className="w-full bg-orange-500 hover:bg-orange-600 text-white text-xs">
-                            Register
+                        <Link href={`/join-run?event=${event.id}`} className="block">
+                          <Button className="w-full bg-accent hover:bg-accent/90 text-background text-xs font-semibold group-hover:shadow-lg group-hover:shadow-accent/50 transition-all">
+                            Register Now
                           </Button>
                         </Link>
                       </div>
@@ -313,9 +319,8 @@ export default function EventCalendarPage() {
             </div>
           </div>
         </div>
-      </div>
-    </main>
-    <Footer />
+      </main>
+      <Footer />
     </>
   );
 }

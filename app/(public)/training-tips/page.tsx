@@ -167,7 +167,7 @@ export default function TrainingTipsPage() {
                   )}
 
                   {/* Content */}
-                  <div className="p-5 flex flex-col flex-grow">
+                  <div className="p-5 flex flex-col grow">
                     {/* Category Badge */}
                     <div className="flex items-center gap-2 mb-3">
                       <Tag className="w-4 h-4 text-orange-500" />
@@ -182,7 +182,7 @@ export default function TrainingTipsPage() {
                     </h3>
 
                     {/* Description */}
-                    <p className="text-gray-600 text-sm mb-4 flex-grow line-clamp-3">
+                    <p className="text-gray-600 text-sm mb-4 grow line-clamp-3">
                       {tip.description}
                     </p>
 

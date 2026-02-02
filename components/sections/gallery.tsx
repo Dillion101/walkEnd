@@ -3,18 +3,67 @@
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+
+interface GalleryImage {
+  id: string
+  image_url: string
+  title: string
+  description?: string
+}
 
 export default function Gallery() {
   const sectionRef = useRef(null)
   const [isVisible, setIsVisible] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
+  const [images, setImages] = useState<GalleryImage[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const images = [
+  const fallbackImages = [
     { src: '/gallery-1.jpg', alt: 'Community runners together', title: 'Community Spirit' },
     { src: '/gallery-2.jpg', alt: 'Runner sprinting', title: 'Full Sprint' },
     { src: '/gallery-3.jpg', alt: 'Running in motion', title: 'Motion & Power' },
     { src: '/gallery-4.jpg', alt: 'Celebration at finish', title: 'Victory Moment' },
   ]
+
+  useEffect(() => {
+    fetchGalleryImages()
+  }, [])
+
+  async function fetchGalleryImages() {
+    try {
+      const { data, error } = await supabase
+        .from('gallery_images')
+        .select('id, image_url, title, description')
+        .order('created_at', { ascending: false })
+        .limit(8)
+
+      if (error) throw error
+      
+      if (data && data.length > 0) {
+        setImages(data)
+      } else {
+        // Use fallback if no images in database
+        setImages(fallbackImages.map((img, idx) => ({
+          id: String(idx),
+          image_url: img.src,
+          title: img.title,
+          description: img.alt,
+        })))
+      }
+    } catch (error) {
+      console.error('Error fetching gallery images:', error)
+      // Use fallback on error
+      setImages(fallbackImages.map((img, idx) => ({
+        id: String(idx),
+        image_url: img.src,
+        title: img.title,
+        description: img.alt,
+      })))
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -45,10 +94,10 @@ export default function Gallery() {
     <section id="gallery" ref={sectionRef} className="w-full py-20 bg-card border-t border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-16">
-          <span className="text-accent uppercase text-sm tracking-widest font-semibold">Moments</span>
-          <h2 className="text-5xl sm:text-6xl font-bold font-display mt-2">Gallery</h2>
-          <p className="text-gray-400 text-lg mt-4">
+        <div className="mb-16 animate-fade-in">
+          <span className="text-accent uppercase text-sm tracking-widest font-semibold block animate-slide-up">Moments</span>
+          <h2 className="text-5xl sm:text-6xl font-bold font-display mt-2 animate-slide-up animation-delay-100">Gallery</h2>
+          <p className="text-gray-400 text-lg mt-4 animate-slide-up animation-delay-200">
             Capture the energy and passion of our running community.
           </p>
         </div>
@@ -56,10 +105,10 @@ export default function Gallery() {
         {/* Main Gallery */}
         <div className="relative">
           {/* Featured Image */}
-          <div className="relative aspect-video overflow-hidden mb-8 group">
+          <div className="relative aspect-video overflow-hidden mb-8 group animate-scale-in" key={activeIndex}>
             <Image
-              src={images[activeIndex].src || "/placeholder.svg"}
-              alt={images[activeIndex].alt}
+              src={images[activeIndex]?.image_url || "/placeholder.svg"}
+              alt={images[activeIndex]?.description || images[activeIndex]?.title || "Gallery image"}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-500"
             />
@@ -67,7 +116,7 @@ export default function Gallery() {
 
             {/* Slide Label */}
             <div className="absolute bottom-6 left-6 bg-accent text-background px-4 py-2">
-              <p className="text-sm font-semibold uppercase tracking-wider">{images[activeIndex].title}</p>
+              <p className="text-sm font-semibold uppercase tracking-wider">{images[activeIndex]?.title}</p>
             </div>
 
             {/* Counter */}
@@ -90,15 +139,16 @@ export default function Gallery() {
             <div className="flex gap-2 flex-1 mx-4">
               {images.map((img, index) => (
                 <button
-                  key={index}
+                  title='button'
+                  key={img.id}
                   onClick={() => setActiveIndex(index)}
                   className={`relative flex-1 aspect-video overflow-hidden transition-all duration-300 ${
                     activeIndex === index ? 'ring-2 ring-accent' : 'opacity-50 hover:opacity-75'
                   }`}
                 >
                   <Image
-                    src={img.src || "/placeholder.svg"}
-                    alt={img.alt}
+                    src={img.image_url || "/placeholder.svg"}
+                    alt={img.description || img.title}
                     fill
                     className="object-cover"
                   />
@@ -119,7 +169,7 @@ export default function Gallery() {
           <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4">
             {images.map((img, index) => (
               <div
-                key={index}
+                key={img.id}
                 className={`relative aspect-square overflow-hidden cursor-pointer group transform transition-all duration-300 ${
                   isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
                 }`}
@@ -128,8 +178,8 @@ export default function Gallery() {
                 }}
               >
                 <Image
-                  src={img.src || "/placeholder.svg"}
-                  alt={img.alt}
+                  src={img.image_url || "/placeholder.svg"}
+                  alt={img.description || img.title}
                   fill
                   className="object-cover group-hover:scale-110 transition-transform duration-500"
                 />
@@ -143,6 +193,60 @@ export default function Gallery() {
           </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        .animate-fade-in {
+          animation: fadeIn 0.6s ease-out;
+        }
+
+        .animate-slide-up {
+          animation: slideUp 0.6s ease-out forwards;
+          opacity: 0;
+        }
+
+        .animate-scale-in {
+          animation: scaleIn 0.4s ease-out;
+        }
+
+        .animation-delay-100 {
+          animation-delay: 0.1s;
+        }
+
+        .animation-delay-200 {
+          animation-delay: 0.2s;
+        }
+      `}</style>
     </section>
   )
 }

@@ -111,8 +111,9 @@ export function MapPicker({
 
   // Handle search for locations
   const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
+    e.preventDefault()
+    e.stopPropagation()
+    if (!searchQuery.trim()) return
 
     setIsSearching(true);
     try {
@@ -193,8 +194,12 @@ export function MapPicker({
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => handleSelectFromSearch(result)}
-                      className="w-full text-left px-3 py-2 hover:bg-orange-50 border-b last:border-b-0 text-sm"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleSelectFromSearch(result)
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-orange-50 border-b last:border-b-0 text-sm cursor-pointer"
                     >
                       <p className="font-medium text-gray-900">{result.name.split(',')[0]}</p>
                       <p className="text-xs text-gray-500">{result.lat.toFixed(4)}, {result.lng.toFixed(4)}</p>
@@ -215,7 +220,7 @@ export function MapPicker({
 
       <Card className="p-4 bg-orange-50 border-orange-200">
         <div className="flex items-start gap-3">
-          <MapPin className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+          <MapPin className="w-5 h-5 text-orange-600 mt-0.5 shrink-0" />
           <div className="space-y-1">
             <p className="font-medium text-gray-900">{selectedLocation.name}</p>
             <p className="text-sm text-gray-600">

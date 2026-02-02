@@ -10,8 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Trash2, Edit2, Plus } from 'lucide-react'
-import { uploadToCloudinary } from '@/lib/cloudinary'
+import { uploadToCloudinary, deleteImageFromCloudinary } from '@/lib/cloudinary'
 import { MapPicker } from './map-picker'
+import 'leaflet/dist/leaflet.css'
 
 interface Event {
   id: string
@@ -19,8 +20,8 @@ interface Event {
   description: string
   date: string
   location_name: string
-  latitude: number
-  longitude: number
+  latitude: number | null
+  longitude: number | null
   image_url: string
   created_at: string
 }
@@ -42,10 +43,11 @@ export default function EventsPage() {
     description: '',
     date: '',
     location_name: '',
-    latitude: 0,
-    longitude: 0,
+    latitude: null as number | null,
+    longitude: null as number | null,
     image_url: '',
   })
+  const [locationPickedFromMap, setLocationPickedFromMap] = useState(false)
 
   useEffect(() => {
     fetchEvents()
@@ -93,6 +95,10 @@ export default function EventsPage() {
 
       // Upload image if selected
       if (imageFile) {
+        // If updating and there's an old image, delete it
+        if (editingId && formData.image_url) {
+          await deleteImageFromCloudinary(formData.image_url)
+        }
         const { url } = await uploadToCloudinary(imageFile)
         imageUrl = url
       }
@@ -115,18 +121,43 @@ export default function EventsPage() {
         if (error) throw error
       } else {
         // Create new event
-        const { error } = await supabase.from('events').insert({
+        const eventData: any = {
           title: formData.title,
           description: formData.description,
           date: formData.date,
           location_name: formData.location_name,
-          latitude: formData.latitude,
-          longitude: formData.longitude,
           image_url: imageUrl,
           created_by: user.id,
-        })
+          // Use default Ghana coordinates if not picked from map (5.6037, -0.1870 = Accra, Ghana)
+          latitude: formData.latitude ?? 5.6037,
+          longitude: formData.longitude ?? -0.1870,
+        }
+
+        const { error } = await supabase.from('events').insert(eventData)
 
         if (error) throw error
+
+        // Send event notification emails via API
+        try {
+          const response = await fetch('/api/emails/send-event-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              eventTitle: formData.title,
+              eventDate: formData.date,
+              eventLocation: formData.location_name,
+              eventDescription: formData.description,
+              imageUrl: imageUrl,
+            }),
+          })
+
+          if (!response.ok) {
+            console.error('Failed to send event notifications')
+          }
+        } catch (emailError) {
+          console.error('Error sending event notifications:', emailError)
+          // Don't fail the event creation if email fails
+        }
       }
 
       // Reset form and refresh
@@ -145,6 +176,12 @@ export default function EventsPage() {
     if (!confirm('Are you sure you want to delete this event?')) return
 
     try {
+      // Find event to get image URL
+      const event = events.find(e => e.id === id)
+      if (event && event.image_url) {
+        await deleteImageFromCloudinary(event.image_url)
+      }
+
       const { error } = await supabase.from('events').delete().eq('id', id)
       if (error) throw error
       await fetchEvents()
@@ -160,13 +197,14 @@ export default function EventsPage() {
       description: '',
       date: '',
       location_name: '',
-      latitude: 0,
-      longitude: 0,
+      latitude: null,
+      longitude: null,
       image_url: '',
     })
     setImageFile(null)
     setImagePreview('')
     setEditingId(null)
+    setLocationPickedFromMap(false)
   }
 
   function editEvent(event: Event) {
@@ -190,7 +228,7 @@ export default function EventsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div className="flex items-center gap-3">
           <Image
             src="/icon.svg"
@@ -199,18 +237,18 @@ export default function EventsPage() {
             height={40}
           />
           <div>
-            <h2 className="text-3xl font-bold">Events Management</h2>
-            <p className="text-muted-foreground">Create and manage running events</p>
+            <h2 className="text-2xl sm:text-3xl font-bold">Events Management</h2>
+            <p className="text-muted-foreground text-sm">Create and manage running events</p>
           </div>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm} className="bg-orange-500 hover:bg-orange-600">
+            <Button onClick={resetForm} className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               New Event
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingId ? 'Edit Event' : 'Create New Event'}</DialogTitle>
               <DialogDescription>
@@ -295,11 +333,12 @@ export default function EventsPage() {
                   </Button>
                   {showMapPicker && (
                     <MapPicker
-                      initialLat={formData.latitude}
-                      initialLng={formData.longitude}
+                      initialLat={formData.latitude || 5.6037}
+                      initialLng={formData.longitude || -0.1870}
                       initialLocationName={formData.location_name}
                       onLocationSelect={(lat, lng, name) => {
                         setFormData({ ...formData, latitude: lat, longitude: lng, location_name: name })
+                        setLocationPickedFromMap(true)
                         setShowMapPicker(false)
                       }}
                     />
@@ -308,26 +347,24 @@ export default function EventsPage() {
               ) : (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Latitude *</label>
+                    <label className="block text-sm font-medium mb-1">Latitude</label>
                     <Input
                       type="number"
                       step="0.00001"
-                      value={formData.latitude}
-                      onChange={(e) => setFormData({ ...formData, latitude: parseFloat(e.target.value) })}
-                      placeholder="40.785091"
-                      required
+                      value={formData.latitude || ''}
+                      onChange={(e) => setFormData({ ...formData, latitude: e.target.value ? parseFloat(e.target.value) : null })}
+                      placeholder="40.785091 (optional)"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1">Longitude *</label>
+                    <label className="block text-sm font-medium mb-1">Longitude</label>
                     <Input
                       type="number"
                       step="0.00001"
-                      value={formData.longitude}
-                      onChange={(e) => setFormData({ ...formData, longitude: parseFloat(e.target.value) })}
-                      placeholder="-73.968285"
-                      required
+                      value={formData.longitude || ''}
+                      onChange={(e) => setFormData({ ...formData, longitude: e.target.value ? parseFloat(e.target.value) : null })}
+                      placeholder="-73.968285 (optional)"
                     />
                   </div>
                 </div>
@@ -392,7 +429,8 @@ export default function EventsPage() {
                     </p>
                     <p className="text-sm mb-2">{event.description}</p>
                     <p className="text-xs text-muted-foreground">
-                      📍 {event.location_name} ({event.latitude.toFixed(4)}, {event.longitude.toFixed(4)})
+                      📍 {event.location_name} 
+                      {event.latitude && event.longitude ? ` (${event.latitude.toFixed(4)}, ${event.longitude.toFixed(4)})` : ''}
                     </p>
                   </div>
                   <div className="flex gap-2">

@@ -143,7 +143,7 @@ export default function FAQPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div className="flex items-center gap-3">
           <Image
             src="/icon.svg"
@@ -152,18 +152,18 @@ export default function FAQPage() {
             height={40}
           />
           <div>
-            <h2 className="text-3xl font-bold">FAQ Management</h2>
-            <p className="text-muted-foreground">Add and manage frequently asked questions</p>
+            <h2 className="text-2xl sm:text-3xl font-bold">FAQ Management</h2>
+            <p className="text-muted-foreground text-sm">Add and manage frequently asked questions</p>
           </div>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm} className="bg-orange-500 hover:bg-orange-600">
+            <Button onClick={resetForm} className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               New FAQ
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="w-[95vw] sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle>{editingId ? 'Edit FAQ' : 'Create New FAQ'}</DialogTitle>
               <DialogDescription>
