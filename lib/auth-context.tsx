@@ -39,70 +39,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    // Try to load cached user data first to reduce loading time
-    const cachedUser = localStorage.getItem('walkend_user')
-    if (cachedUser) {
+useEffect(() => {
+  let mounted = true;
+
+  async function handleSession(session: Session | null) {
+    setSession(session);
+    
+    if (session?.user) {
+      // 1. Check cache first for instant UI (optional optimization)
+      const cached = localStorage.getItem(`user_${session.user.id}`);
+      if (cached) setUser(JSON.parse(cached));
+      
+      // 2. Fetch fresh data
       try {
-        const cacheData = JSON.parse(cachedUser)
-        const cacheAge = Date.now() - (cacheData.timestamp || 0)
-        // Cache for 7 days - session is managed by Supabase auth via cookies
-        // Sensitive data (passwords, keys) are never cached
-        const sevenDays = 7 * 24 * 60 * 60 * 1000
-        
-        // Use cache if less than 7 days old
-        if (cacheAge < sevenDays) {
-          setUser(cacheData)
-        } else {
-          localStorage.removeItem('walkend_user')
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (data && mounted) {
+           setUser(data);
+           localStorage.setItem(`user_${session.user.id}`, JSON.stringify(data));
         }
-      } catch (e) {
-        console.error('Failed to parse cached user:', e)
-        localStorage.removeItem('walkend_user')
+      } catch (err) {
+        // Handle fetch error
       }
+    } else {
+      setUser(null);
     }
+    
+    if (mounted) setLoading(false);
+  }
 
-    // Get initial session with timeout
-    let timeoutId: NodeJS.Timeout
-    const initAuth = async () => {
-      try {
-        const { data: { session } } = await withTimeout(
-          supabase.auth.getSession(),
-          5000
-        )
-        setSession(session)
-        if (session?.user) {
-          await fetchUserRole(session.user.id)
-        } else {
-          setLoading(false)
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error)
-        setLoading(false)
-      }
+  // Supabase automatically checks the session on mount here
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    (_event, session) => {
+      if (mounted) handleSession(session);
     }
+  );
 
-    initAuth()
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session)
-      if (session?.user) {
-        await fetchUserRole(session.user.id)
-      } else {
-        setUser(null)
-        localStorage.removeItem('walkend_user')
-        setLoading(false)
-      }
-    })
-
-    return () => {
-      subscription?.unsubscribe()
-      clearTimeout(timeoutId)
-    }
-  }, [])
+  return () => {
+    mounted = false;
+    subscription.unsubscribe();
+  };
+}, []);
 
   async function fetchUserRole(userId: string) {
     try {

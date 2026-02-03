@@ -114,9 +114,7 @@ export default function AdminLayout({
           <p className="text-xs sm:text-sm text-muted-foreground">Manage WalkEnd WeekEnd content</p>
         </header>
 
-        <main className={`flex-1 overflow-auto p-4 sm:p-6 transition-all duration-300 ${
-          sidebarOpen ? '' : 'blur-sm opacity-75'
-        }`}>
+        <main className={`flex-1 overflow-auto p-4 sm:p-6 transition-all duration-300 `}>
           {children}
         </main>
       </div>
