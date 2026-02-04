@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import { Trash2, Edit2, Plus, Eye, EyeOff } from 'lucide-react'
+import { Trash2, Edit2, Plus, AlertCircle } from 'lucide-react'
 import { uploadToCloudinary, deleteImageFromCloudinary } from '@/lib/cloudinary'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface BlogPost {
   id: string
@@ -32,6 +33,7 @@ export default function BlogPage() {
   const [uploading, setUploading] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>('')
+  const [error, setError] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -85,11 +87,12 @@ export default function BlogPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!user?.id) {
-      alert('You must be logged in')
+      setError('You must be logged in')
       return
     }
 
     setUploading(true)
+    setError(null)
 
     try {
       let imageUrl = formData.featured_image_url
@@ -129,7 +132,7 @@ export default function BlogPage() {
 
         if (error) throw error
 
-        // Send blog notification email if published
+        // Send blog notification email if published - MUST succeed
         if (formData.published) {
           try {
             const postUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://walkendweekend.com'}/blog/${formData.slug}`
@@ -145,11 +148,13 @@ export default function BlogPage() {
             })
 
             if (!response.ok) {
-              console.error('Failed to send blog notifications')
+              const errorData = await response.json()
+              throw new Error(errorData.error || 'Failed to send blog notifications')
             }
           } catch (emailError) {
-            console.error('Error sending blog notifications:', emailError)
-            // Don't fail the post creation if email fails
+            // Delete the post if email fails
+            await supabase.from('blog_posts').delete().eq('slug', formData.slug)
+            throw new Error(`Blog post created but failed to notify users: ${emailError instanceof Error ? emailError.message : 'Unknown error'}`)
           }
         }
       }
@@ -159,7 +164,7 @@ export default function BlogPage() {
       await fetchPosts()
     } catch (error) {
       console.error('Error saving post:', error)
-      alert(error instanceof Error ? error.message : 'Failed to save post')
+      setError(error instanceof Error ? error.message : 'Failed to save blog post')
     } finally {
       setUploading(false)
     }
@@ -169,8 +174,13 @@ export default function BlogPage() {
     if (!confirm('Are you sure you want to delete this post?')) return
 
     try {
-      const { error } = await supabase.from('blog_posts').delete().eq('id', id)
-      if (error) throw error
+      const res = await fetch('/api/blog/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to delete post')
       await fetchPosts()
     } catch (error) {
       console.error('Error deleting post:', error)
@@ -254,6 +264,13 @@ export default function BlogPage() {
                 {editingId ? 'Update blog post details' : 'Write a new blog post'}
               </DialogDescription>
             </DialogHeader>
+
+            {error && (
+              <Alert className="bg-red-50 border-red-200">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">{error}</AlertDescription>
+              </Alert>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -387,11 +404,7 @@ export default function BlogPage() {
                       size="sm"
                       onClick={() => togglePublished(post)}
                     >
-                      {post.published ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
+                      {post.published ? 'Hide' : 'Show'}
                     </Button>
                     <Button
                       variant="outline"

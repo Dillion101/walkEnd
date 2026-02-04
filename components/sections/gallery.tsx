@@ -8,8 +8,8 @@ import { supabase } from '@/lib/supabase'
 interface GalleryImage {
   id: string
   image_url: string
-  title: string
-  description?: string
+  caption: string | null
+  image_date: string | null
 }
 
 export default function Gallery() {
@@ -34,8 +34,8 @@ export default function Gallery() {
     try {
       const { data, error } = await supabase
         .from('gallery_images')
-        .select('id, image_url, title, description')
-        .order('created_at', { ascending: false })
+        .select('id, image_url, caption, image_date')
+        .order('image_date', { ascending: false })
         .limit(8)
 
       if (error) throw error
@@ -47,8 +47,8 @@ export default function Gallery() {
         setImages(fallbackImages.map((img, idx) => ({
           id: String(idx),
           image_url: img.src,
-          title: img.title,
-          description: img.alt,
+          caption: img.title,
+          image_date: null,
         })))
       }
     } catch (error) {
@@ -57,8 +57,8 @@ export default function Gallery() {
       setImages(fallbackImages.map((img, idx) => ({
         id: String(idx),
         image_url: img.src,
-        title: img.title,
-        description: img.alt,
+        caption: img.title,
+        image_date: null,
       })))
     } finally {
       setLoading(false)
@@ -108,16 +108,18 @@ export default function Gallery() {
           <div className="relative aspect-video overflow-hidden mb-8 group animate-scale-in" key={activeIndex}>
             <Image
               src={images[activeIndex]?.image_url || "/placeholder.svg"}
-              alt={images[activeIndex]?.description || images[activeIndex]?.title || "Gallery image"}
+              alt={images[activeIndex]?.caption || "Gallery image"}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-500"
             />
             <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
 
             {/* Slide Label */}
-            <div className="absolute bottom-6 left-6 bg-accent text-background px-4 py-2">
-              <p className="text-sm font-semibold uppercase tracking-wider">{images[activeIndex]?.title}</p>
-            </div>
+            {images[activeIndex]?.caption && (
+              <div className="absolute bottom-6 left-6 bg-accent text-background px-4 py-2">
+                <p className="text-sm font-semibold uppercase tracking-wider">{images[activeIndex]?.caption}</p>
+              </div>
+            )}
 
             {/* Counter */}
             <div className="absolute bottom-6 right-6 bg-black/50 text-white px-4 py-2 rounded-sm text-xs font-mono">
@@ -139,7 +141,7 @@ export default function Gallery() {
             <div className="flex gap-2 flex-1 mx-4">
               {images.map((img, index) => (
                 <button
-                  title='button'
+                  title={img.caption || 'Gallery image'}
                   key={img.id}
                   onClick={() => setActiveIndex(index)}
                   className={`relative flex-1 aspect-video overflow-hidden transition-all duration-300 ${
@@ -148,7 +150,7 @@ export default function Gallery() {
                 >
                   <Image
                     src={img.image_url || "/placeholder.svg"}
-                    alt={img.description || img.title}
+                    alt={img.caption || 'Gallery image'}
                     fill
                     className="object-cover"
                   />
@@ -179,14 +181,16 @@ export default function Gallery() {
               >
                 <Image
                   src={img.image_url || "/placeholder.svg"}
-                  alt={img.description || img.title}
+                  alt={img.caption || 'Gallery image'}
                   fill
                   className="object-cover group-hover:scale-110 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                  <span className="text-white font-bold font-display text-center text-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                    {img.title}
-                  </span>
+                  {img.caption && (
+                    <span className="text-white font-bold font-display text-center text-sm opacity-0 group-hover:opacity-100 transition-opacity px-2">
+                      {img.caption}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}

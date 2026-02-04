@@ -9,10 +9,9 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import { Trash2, Edit2, Plus } from 'lucide-react'
-import { uploadToCloudinary, deleteImageFromCloudinary } from '@/lib/cloudinary'
-import { MapPicker } from './map-picker'
-import 'leaflet/dist/leaflet.css'
+import { Trash2, Edit2, Plus, AlertCircle, Users, Download, X } from 'lucide-react'
+import { uploadToCloudinary } from '@/lib/cloudinary'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface Event {
   id: string
@@ -26,6 +25,19 @@ interface Event {
   created_at: string
 }
 
+interface Registration {
+  id: string
+  user_id: string
+  event_id: string
+  status: string
+  registered_at: string
+  users: {
+    full_name: string
+    email: string
+    phone_number?: string
+  }
+}
+
 export default function EventsPage() {
   const { user } = useAuth()
   const [events, setEvents] = useState<Event[]>([])
@@ -35,8 +47,13 @@ export default function EventsPage() {
   const [uploading, setUploading] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>('')
-  const [useMapPicker, setUseMapPicker] = useState(true)
-  const [showMapPicker, setShowMapPicker] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  
+  // Registrations state
+  const [registrationsOpen, setRegistrationsOpen] = useState(false)
+  const [selectedEventForRegistrations, setSelectedEventForRegistrations] = useState<Event | null>(null)
+  const [registrations, setRegistrations] = useState<Registration[]>([])
+  const [loadingRegistrations, setLoadingRegistrations] = useState(false)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -47,11 +64,64 @@ export default function EventsPage() {
     longitude: null as number | null,
     image_url: '',
   })
-  const [locationPickedFromMap, setLocationPickedFromMap] = useState(false)
 
   useEffect(() => {
     fetchEvents()
   }, [])
+
+  // Fetch registrations for an event
+  async function fetchRegistrations(eventId: string) {
+    setLoadingRegistrations(true)
+    try {
+      const { data, error } = await supabase
+        .from('event_registrations')
+        .select('*, users(full_name, email, phone_number)')
+        .eq('event_id', eventId)
+        .order('registered_at', { ascending: false })
+
+      if (error) throw error
+      setRegistrations(data || [])
+    } catch (error) {
+      console.error('Error fetching registrations:', error)
+      setRegistrations([])
+    } finally {
+      setLoadingRegistrations(false)
+    }
+  }
+
+  // Open registrations dialog
+  function viewRegistrations(event: Event) {
+    setSelectedEventForRegistrations(event)
+    setRegistrationsOpen(true)
+    fetchRegistrations(event.id)
+  }
+
+  // Export registrations to CSV
+  function exportRegistrationsCSV() {
+    if (!selectedEventForRegistrations || registrations.length === 0) return
+
+    const headers = ['Name', 'Email', 'Phone', 'Status', 'Registered At']
+    const rows = registrations.map(r => [
+      r.users?.full_name || 'N/A',
+      r.users?.email || 'N/A',
+      r.users?.phone_number || 'N/A',
+      r.status,
+      new Date(r.registered_at).toLocaleString()
+    ])
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${selectedEventForRegistrations.title.replace(/\s+/g, '_')}_registrations.csv`
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
 
   async function fetchEvents() {
     try {
@@ -84,11 +154,12 @@ export default function EventsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!user?.id) {
-      alert('You must be logged in')
+      setError('You must be logged in')
       return
     }
 
     setUploading(true)
+    setError(null)
 
     try {
       let imageUrl = formData.image_url
@@ -128,7 +199,7 @@ export default function EventsPage() {
           location_name: formData.location_name,
           image_url: imageUrl,
           created_by: user.id,
-          // Use default Ghana coordinates if not picked from map (5.6037, -0.1870 = Accra, Ghana)
+          // Use default Ghana coordinates if not provided
           latitude: formData.latitude ?? 5.6037,
           longitude: formData.longitude ?? -0.1870,
         }
@@ -137,7 +208,7 @@ export default function EventsPage() {
 
         if (error) throw error
 
-        // Send event notification emails via API
+        // Send event notification emails via API - MUST succeed
         try {
           const response = await fetch('/api/emails/send-event-notification', {
             method: 'POST',
@@ -152,11 +223,13 @@ export default function EventsPage() {
           })
 
           if (!response.ok) {
-            console.error('Failed to send event notifications')
+            const errorData = await response.json()
+            throw new Error(errorData.error || 'Failed to send event notifications')
           }
         } catch (emailError) {
-          console.error('Error sending event notifications:', emailError)
-          // Don't fail the event creation if email fails
+          // Delete the event if email fails
+          await supabase.from('events').delete().eq('title', formData.title)
+          throw new Error(`Event created but failed to notify users: ${emailError instanceof Error ? emailError.message : 'Unknown error'}`)
         }
       }
 
@@ -166,7 +239,7 @@ export default function EventsPage() {
       await fetchEvents()
     } catch (error) {
       console.error('Error saving event:', error)
-      alert(error instanceof Error ? error.message : 'Failed to save event')
+      setError(error instanceof Error ? error.message : 'Failed to save event')
     } finally {
       setUploading(false)
     }
@@ -176,14 +249,13 @@ export default function EventsPage() {
     if (!confirm('Are you sure you want to delete this event?')) return
 
     try {
-      // Find event to get image URL
-      const event = events.find(e => e.id === id)
-      if (event && event.image_url) {
-        await deleteImageFromCloudinary(event.image_url)
-      }
-
-      const { error } = await supabase.from('events').delete().eq('id', id)
-      if (error) throw error
+      const res = await fetch('/api/events/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to delete event')
       await fetchEvents()
     } catch (error) {
       console.error('Error deleting event:', error)
@@ -204,7 +276,6 @@ export default function EventsPage() {
     setImageFile(null)
     setImagePreview('')
     setEditingId(null)
-    setLocationPickedFromMap(false)
   }
 
   function editEvent(event: Event) {
@@ -256,6 +327,13 @@ export default function EventsPage() {
               </DialogDescription>
             </DialogHeader>
 
+            {error && (
+              <Alert className="bg-red-50 border-red-200">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">{error}</AlertDescription>
+              </Alert>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Title *</label>
@@ -300,51 +378,10 @@ export default function EventsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-3">Location Selection Method</label>
-                <div className="flex gap-2 mb-4">
-                  <Button
-                    type="button"
-                    variant={useMapPicker ? 'default' : 'outline'}
-                    onClick={() => setUseMapPicker(true)}
-                    className={useMapPicker ? 'bg-orange-500 hover:bg-orange-600' : ''}
-                  >
-                    Search on Map
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={!useMapPicker ? 'default' : 'outline'}
-                    onClick={() => setUseMapPicker(false)}
-                    className={!useMapPicker ? 'bg-orange-500 hover:bg-orange-600' : ''}
-                  >
-                    Manual Entry
-                  </Button>
-                </div>
-              </div>
-
-              {useMapPicker ? (
-                <div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowMapPicker(!showMapPicker)}
-                    className="w-full mb-2"
-                  >
-                    {showMapPicker ? 'Hide Map' : 'Open Map Picker'}
-                  </Button>
-                  {showMapPicker && (
-                    <MapPicker
-                      initialLat={formData.latitude || 5.6037}
-                      initialLng={formData.longitude || -0.1870}
-                      initialLocationName={formData.location_name}
-                      onLocationSelect={(lat, lng, name) => {
-                        setFormData({ ...formData, latitude: lat, longitude: lng, location_name: name })
-                        setLocationPickedFromMap(true)
-                        setShowMapPicker(false)
-                      }}
-                    />
-                  )}
-                </div>
-              ) : (
+                <label className="block text-sm font-medium mb-1">Event Location Coordinates</label>
+                <p className="text-xs text-gray-600 mb-3">
+                  Use <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:underline">Google Maps</a> to find coordinates. Click the location, then copy the latitude and longitude from the popup.
+                </p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">Latitude</label>
@@ -353,7 +390,7 @@ export default function EventsPage() {
                       step="0.00001"
                       value={formData.latitude || ''}
                       onChange={(e) => setFormData({ ...formData, latitude: e.target.value ? parseFloat(e.target.value) : null })}
-                      placeholder="40.785091 (optional)"
+                      placeholder="e.g., 5.6037 (optional)"
                     />
                   </div>
 
@@ -364,11 +401,11 @@ export default function EventsPage() {
                       step="0.00001"
                       value={formData.longitude || ''}
                       onChange={(e) => setFormData({ ...formData, longitude: e.target.value ? parseFloat(e.target.value) : null })}
-                      placeholder="-73.968285 (optional)"
+                      placeholder="e.g., -0.1870 (optional)"
                     />
                   </div>
                 </div>
-              )}
+              </div>
 
               <div>
                 <label className="block text-sm font-medium mb-1">Event Image</label>
@@ -433,21 +470,32 @@ export default function EventsPage() {
                       {event.latitude && event.longitude ? ` (${event.latitude.toFixed(4)}, ${event.longitude.toFixed(4)})` : ''}
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => editEvent(event)}
+                      onClick={() => viewRegistrations(event)}
+                      className="flex items-center gap-1"
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Users className="w-4 h-4" />
+                      <span className="hidden sm:inline">Registrations</span>
                     </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => deleteEvent(event.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => editEvent(event)}
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteEvent(event.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -455,6 +503,90 @@ export default function EventsPage() {
           ))
         )}
       </div>
+
+      {/* Registrations Dialog */}
+      <Dialog open={registrationsOpen} onOpenChange={setRegistrationsOpen}>
+        <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Registrations for {selectedEventForRegistrations?.title}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedEventForRegistrations && new Date(selectedEventForRegistrations.date).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingRegistrations ? (
+            <div className="py-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-2"></div>
+              <p className="text-muted-foreground text-sm">Loading registrations...</p>
+            </div>
+          ) : registrations.length === 0 ? (
+            <div className="py-8 text-center">
+              <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">No registrations yet for this event.</p>
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-sm font-medium">
+                  Total: <span className="text-orange-500">{registrations.length}</span> registered
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={exportRegistrationsCSV}
+                  className="flex items-center gap-1"
+                >
+                  <Download className="w-4 h-4" />
+                  Export CSV
+                </Button>
+              </div>
+
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-medium">Name</th>
+                      <th className="text-left px-4 py-3 font-medium">Email</th>
+                      <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Phone</th>
+                      <th className="text-left px-4 py-3 font-medium">Status</th>
+                      <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Registered</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {registrations.map((reg) => (
+                      <tr key={reg.id} className="hover:bg-muted/50">
+                        <td className="px-4 py-3 font-medium">{reg.users?.full_name || 'N/A'}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{reg.users?.email || 'N/A'}</td>
+                        <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{reg.users?.phone_number || '-'}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            reg.status === 'registered' ? 'bg-green-100 text-green-700' :
+                            reg.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                            'bg-blue-100 text-blue-700'
+                          }`}>
+                            {reg.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs hidden sm:table-cell">
+                          {new Date(reg.registered_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

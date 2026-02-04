@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Trash2, Plus } from 'lucide-react'
-import { uploadToCloudinary, deleteImageFromCloudinary } from '@/lib/cloudinary'
+import { uploadToCloudinary } from '@/lib/cloudinary'
 
 interface GalleryImage {
   id: string
@@ -125,8 +125,13 @@ export default function GalleryPage() {
     if (!confirm('Are you sure you want to delete this image?')) return
 
     try {
-      const { error } = await supabase.from('gallery_images').delete().eq('id', id)
-      if (error) throw error
+      const res = await fetch('/api/gallery/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to delete image')
       await fetchData()
     } catch (error) {
       console.error('Error deleting image:', error)

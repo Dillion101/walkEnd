@@ -50,11 +50,15 @@ export async function uploadToCloudinary(file: File): Promise<{ url: string; pub
   }
 }
 
-export async function deleteImageFromCloudinary(imageUrl: string): Promise<void> {
+/** Client-side: delete by URL (extracts public_id) or by public_id directly */
+export async function deleteImageFromCloudinary(imageUrlOrPublicId: string): Promise<void> {
   try {
-    const publicId = extractPublicIdFromUrl(imageUrl)
+    let publicId = imageUrlOrPublicId
+    if (imageUrlOrPublicId.startsWith('http')) {
+      publicId = extractPublicIdFromUrl(imageUrlOrPublicId) || ''
+    }
     if (!publicId) {
-      console.warn('Could not extract public ID from URL:', imageUrl)
+      console.warn('Could not get public ID:', imageUrlOrPublicId)
       return
     }
 
@@ -73,6 +77,5 @@ export async function deleteImageFromCloudinary(imageUrl: string): Promise<void>
     console.log('Successfully deleted image from Cloudinary:', publicId)
   } catch (error) {
     console.error('Error in deleteImageFromCloudinary:', error)
-    // Don't throw - let the operation continue even if deletion fails
   }
 }

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
+import { EMAIL_CONFIG } from '@/lib/email-config'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = new Resend(process.env.RESEND_API_KEY!)
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,17 +28,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Fetch all users from Supabase
+    // Fetch all user emails from the users table
     const { data: users, error: usersError } = await supabase
-      .from('auth.users')
+      .from('users')
       .select('email')
-      .eq('email_confirmed_at', 'not.is.null')
+      .not('email', 'is', null)
 
     if (usersError) {
       console.error('Error fetching users:', usersError)
+      return NextResponse.json(
+        { error: 'Failed to fetch user emails' },
+        { status: 500 }
+      )
     }
 
-    const userEmails = users?.map((u: any) => u.email) || []
+    const userEmails = users?.map((u: any) => u.email).filter((email: string) => email) || []
 
     if (userEmails.length === 0) {
       return NextResponse.json(
@@ -49,10 +54,16 @@ export async function POST(request: NextRequest) {
     // Send emails to all users
     const promises = userEmails.map((email: string) =>
       resend.emails.send({
-        from: 'WalkEnd WeekEnd <onboarding@resend.dev>',
+        from: EMAIL_CONFIG.FROM_ADDRESS,
         to: email,
         subject: `New Merchandise Available: ${body.itemName} 🛍️`,
         html: generateMerchandiseEmailHTML(body),
+      }).then(result => {
+        console.log(`✓ Merchandise email sent to ${email}:`, result)
+        return result
+      }).catch(err => {
+        console.error(`✗ Failed to send merchandise email to ${email}:`, err)
+        throw err
       })
     )
 

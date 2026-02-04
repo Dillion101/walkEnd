@@ -5,9 +5,11 @@ import Link from 'next/link';
 import Navigation from '@/components/navigation';
 import Footer from '@/components/sections/footer';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Calendar, MapPin, Clock, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import Image from 'next/image';
+import { Calendar, MapPin, ChevronLeft, ChevronRight, Copy, CheckCircle, Check } from 'lucide-react';
 
 interface Event {
   id: string;
@@ -26,15 +28,55 @@ interface CalendarDay {
   isCurrentMonth: boolean;
   isToday: boolean;
   dateString: string;
+  hasRegisteredEvent: boolean;
 }
 
 export default function EventCalendarPage() {
+  const { user, session } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [copiedEventId, setCopiedEventId] = useState<string | null>(null);
+  const [registeredEventIds, setRegisteredEventIds] = useState<Set<string>>(new Set());
+
+  // Check if user is registered for an event
+  const isRegistered = (eventId: string) => registeredEventIds.has(eventId);
+
+  // Copy: coordinates first if admin added them (and not 0,0), else location name
+  const hasValidCoords = (lat: number, lng: number) =>
+    lat != null && lng != null && !(lat === 0 && lng === 0);
+
+  const copyEventLocation = (event: Event) => {
+    const locationText = hasValidCoords(event.latitude, event.longitude)
+      ? `${event.latitude}, ${event.longitude}`
+      : event.location_name;
+    navigator.clipboard.writeText(locationText).then(() => {
+      setCopiedEventId(event.id);
+      setTimeout(() => setCopiedEventId(null), 2000);
+    });
+  };
+
+  // Uber: only works with valid coordinates (not 0,0)
+  const openUber = (event: Event) => {
+    if (!hasValidCoords(event.latitude, event.longitude)) return;
+    const nickname = encodeURIComponent(event.title);
+    const formattedAddress = encodeURIComponent(event.location_name);
+    const webFallback = `https://m.uber.com/ul/?action=setPickup&dropoff[latitude]=${event.latitude}&dropoff[longitude]=${event.longitude}&dropoff[nickname]=${nickname}&dropoff[formatted_address]=${formattedAddress}`;
+    window.open(webFallback, '_blank');
+  };
+
+  // Yango: gto param is longitude,latitude. Fallback to location name when no valid coords
+  const openYango = (event: Event) => {
+    if (hasValidCoords(event.latitude, event.longitude)) {
+      window.open(`https://yango.com/en_int/order/?gto=${event.longitude},${event.latitude}&ref=walkend`, '_blank');
+    } else {
+      const encoded = encodeURIComponent(event.location_name);
+      window.open(`https://yango.com/en_int/order/?gto=${encoded}&ref=walkend`, '_blank');
+    }
+  };
 
   // Fetch events
   useEffect(() => {
@@ -63,6 +105,37 @@ export default function EventCalendarPage() {
     fetchEvents();
   }, []);
 
+  // Fetch user registrations (use session.user.id for reliable auth.uid() match)
+  useEffect(() => {
+    const fetchUserRegistrations = async () => {
+      const userId = session?.user?.id ?? user?.id;
+      if (!userId) {
+        setRegisteredEventIds(new Set());
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('event_registrations')
+          .select('event_id')
+          .eq('user_id', userId)
+          .eq('status', 'registered');
+
+        if (error) {
+          console.error('Error fetching registrations:', error);
+          return;
+        }
+
+        const eventIds = new Set(data?.map(r => r.event_id) || []);
+        setRegisteredEventIds(eventIds);
+      } catch (error) {
+        console.error('Error fetching user registrations:', error);
+      }
+    };
+
+    fetchUserRegistrations();
+  }, [session?.user?.id, user?.id]);
+
   // Generate calendar days
   useEffect(() => {
     const year = currentMonth.getFullYear();
@@ -83,7 +156,8 @@ export default function EventCalendarPage() {
         events: [],
         isCurrentMonth: false,
         isToday: false,
-        dateString: ''
+        dateString: '',
+        hasRegisteredEvent: false
       });
     }
 
@@ -95,13 +169,15 @@ export default function EventCalendarPage() {
       
       const dayEvents = events.filter(e => e.date.startsWith(dateStr));
       const isToday = dayDate.getTime() === today.getTime();
+      const hasRegisteredEvent = dayEvents.some(e => registeredEventIds.has(e.id));
 
       days.push({
         date: i,
         events: dayEvents,
         isCurrentMonth: true,
         isToday,
-        dateString: dateStr
+        dateString: dateStr,
+        hasRegisteredEvent
       });
     }
 
@@ -113,12 +189,13 @@ export default function EventCalendarPage() {
         events: [],
         isCurrentMonth: false,
         isToday: false,
-        dateString: ''
+        dateString: '',
+        hasRegisteredEvent: false
       });
     }
 
     setCalendarDays(days);
-  }, [currentMonth, events]);
+  }, [currentMonth, events, registeredEventIds]);
 
   // Filter events for selected month
   useEffect(() => {
@@ -229,15 +306,11 @@ export default function EventCalendarPage() {
                           ${!day.isCurrentMonth ? 'bg-card/50 text-gray-600 cursor-default' : ''}
                           ${day.isCurrentMonth && !day.isToday && !day.events.length ? 'bg-card border border-border hover:border-accent hover:bg-card/80 text-white cursor-pointer' : ''}
                           ${day.isToday ? 'bg-gradient-to-br from-accent to-accent/80 text-background font-bold shadow-lg shadow-accent/50 ring-2 ring-accent/30' : ''}
-                          ${day.isCurrentMonth && day.events.length > 0 && !day.isToday ? 'bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-2 border-blue-400 text-white hover:from-blue-500/30 hover:to-blue-600/30 cursor-pointer' : ''}
+                          ${day.isCurrentMonth && day.events.length > 0 && !day.isToday && day.hasRegisteredEvent ? 'bg-gradient-to-br from-green-500/20 to-green-600/20 border-2 border-green-400 text-white hover:from-green-500/30 hover:to-green-600/30 cursor-pointer' : ''}
+                          ${day.isCurrentMonth && day.events.length > 0 && !day.isToday && !day.hasRegisteredEvent ? 'bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-2 border-blue-400 text-white hover:from-blue-500/30 hover:to-blue-600/30 cursor-pointer' : ''}
                         `}
                       >
                         <span>{day.date}</span>
-                        {day.events.length > 0 && (
-                          <span className={`text-xs ${day.isToday ? 'text-background/70' : 'text-blue-400'} font-medium`}>
-                            {day.events.length} run{day.events.length > 1 ? 's' : ''}
-                          </span>
-                        )}
                       </button>
                     ))}
                   </div>
@@ -250,6 +323,12 @@ export default function EventCalendarPage() {
                     <div className="flex items-center gap-3">
                       <div className="w-6 h-6 bg-gradient-to-br from-accent to-accent/80 rounded text-white flex items-center justify-center text-xs">✓</div>
                       <span className="text-gray-300">Today</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 bg-gradient-to-br from-green-500/20 to-green-600/20 border-2 border-green-400 rounded flex items-center justify-center">
+                        <Check className="w-3 h-3 text-green-400" />
+                      </div>
+                      <span className="text-gray-300">Registered</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="w-6 h-6 bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-2 border-blue-400 rounded"></div>
@@ -306,11 +385,58 @@ export default function EventCalendarPage() {
                           )}
                         </div>
 
-                        <Link href={`/join-run?event=${event.id}`} className="block">
-                          <Button className="w-full bg-accent hover:bg-accent/90 text-background text-xs font-semibold group-hover:shadow-lg group-hover:shadow-accent/50 transition-all">
-                            Register Now
-                          </Button>
-                        </Link>
+                        {isRegistered(event.id) ? (
+                          <div className="w-full bg-green-500/20 border border-green-500 text-green-400 text-xs font-semibold py-2 px-4 rounded-md flex items-center justify-center gap-2">
+                            <CheckCircle className="w-4 h-4" />
+                            Registered
+                          </div>
+                        ) : (
+                          <Link href={`/join-run?event=${event.id}`} className="block">
+                            <Button className="w-full bg-accent hover:bg-accent/90 text-background text-xs font-semibold group-hover:shadow-lg group-hover:shadow-accent/50 transition-all">
+                              Register Now
+                            </Button>
+                          </Link>
+                        )}
+
+                        {/* Copy Location Button */}
+                        <Button
+                          variant="outline"
+                          className="w-full mt-2 text-xs border-gray-600 hover:border-accent hover:bg-accent/10"
+                          onClick={() => copyEventLocation(event)}
+                        >
+                          {copiedEventId === event.id ? (
+                            <>
+                              <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
+                              <span className="text-green-400">Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3 mr-1" />
+                              Copy Location
+                            </>
+                          )}
+                        </Button>
+
+                        {hasValidCoords(event.latitude, event.longitude) && (
+                          <div className="mt-2 grid grid-cols-2 gap-2">
+                            <Button 
+                              variant="outline" 
+                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1"
+                              onClick={() => openUber(event)}
+                            >
+                              <Image src="/uber.jpg" alt="Uber" width={32} height={16} className="h-4 w-auto object-contain" />
+                              Uber
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1"
+                              onClick={() => openYango(event)}
+                            >
+                              <Image src="/yango.png" alt="Yango" width={32} height={16} className="h-4 w-auto object-contain" />
+                              Yango
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

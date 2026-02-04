@@ -43,7 +43,15 @@ export default function MerchandisePage() {
 
   function handleWhatsAppOrder(item: Merchandise) {
     const phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '1234567890'
-    const message = `Hi, I'm interested in ordering: ${item.name} ($${item.price})`
+    const priceFormatted = typeof item.price === 'number' ? item.price.toFixed(2) : item.price
+    const message = `Hi, I'm interested in ordering:
+
+*${item.name}*
+Price: $${priceFormatted}
+${item.description ? `Description: ${item.description}\n` : ''}
+Product Image: ${item.image_url || 'No image available'}
+
+Please confirm availability and delivery options.`
     const encodedMessage = encodeURIComponent(message)
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`
     window.open(whatsappUrl, '_blank')

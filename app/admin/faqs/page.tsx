@@ -91,8 +91,13 @@ export default function FAQPage() {
     if (!confirm('Are you sure you want to delete this FAQ?')) return
 
     try {
-      const { error } = await supabase.from('faqs').delete().eq('id', id)
-      if (error) throw error
+      const res = await fetch('/api/faqs/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to delete FAQ')
       await fetchFAQs()
     } catch (error) {
       console.error('Error deleting FAQ:', error)

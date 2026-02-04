@@ -8,8 +8,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Textarea } from '@/components/ui/textarea'
-import { Trash2, Edit2, Plus } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Trash2, Edit2, Plus, AlertCircle, Loader2 } from 'lucide-react'
 import { uploadToCloudinary, deleteImageFromCloudinary } from '@/lib/cloudinary'
 
 interface Merchandise {
@@ -31,6 +33,13 @@ export default function MerchandisePage() {
   const [uploading, setUploading] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>('')
+  const [error, setError] = useState<string>('')
+  
+  // Delete confirmation state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState<Merchandise | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string>('')
 
   const [formData, setFormData] = useState({
     name: '',
@@ -74,11 +83,12 @@ export default function MerchandisePage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!user?.id) {
-      alert('You must be logged in')
+      setError('You must be logged in')
       return
     }
 
     setUploading(true)
+    setError('')
 
     try {
       let imageUrl = formData.image_url
@@ -111,18 +121,18 @@ export default function MerchandisePage() {
         if (error) throw error
       } else {
         // Create new item
-        const { error } = await supabase.from('merchandise').insert({
+        const { data: newItem, error: insertError } = await supabase.from('merchandise').insert({
           name: formData.name,
           description: formData.description,
           price: formData.price,
           image_url: imageUrl,
           image_public_id: imagePublicId,
           created_by: user.id,
-        })
+        }).select().single()
 
-        if (error) throw error
+        if (insertError) throw insertError
 
-        // Send merchandise notification email
+        // Send merchandise notification email (mandatory)
         try {
           const response = await fetch('/api/emails/send-merchandise-notification', {
             method: 'POST',
@@ -136,11 +146,15 @@ export default function MerchandisePage() {
           })
 
           if (!response.ok) {
-            console.error('Failed to send merchandise notifications')
+            const errorData = await response.json()
+            throw new Error(errorData.error || 'Failed to send notifications')
           }
         } catch (emailError) {
-          console.error('Error sending merchandise notifications:', emailError)
-          // Don't fail the item creation if email fails
+          // Delete merchandise entry if email fails
+          if (newItem?.id) {
+            await supabase.from('merchandise').delete().eq('id', newItem.id)
+          }
+          throw new Error(`Creation failed: ${emailError instanceof Error ? emailError.message : 'Email notification failed'}`)
         }
       }
 
@@ -148,29 +162,49 @@ export default function MerchandisePage() {
       setIsOpen(false)
       await fetchMerchandise()
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save merchandise'
+      setError(errorMessage)
       console.error('Error saving merchandise:', error)
-      alert(error instanceof Error ? error.message : 'Failed to save merchandise')
     } finally {
       setUploading(false)
     }
   }
 
-  async function deleteItem(id: string) {
-    if (!confirm('Are you sure you want to delete this item?')) return
+  // Open delete confirmation dialog
+  function confirmDelete(item: Merchandise) {
+    setItemToDelete(item)
+    setDeleteError('')
+    setDeleteDialogOpen(true)
+  }
+
+  // Perform the actual delete (API route handles Cloudinary + Supabase with service role)
+  async function deleteItem() {
+    if (!itemToDelete) return
+
+    setDeleting(true)
+    setDeleteError('')
 
     try {
-      // Find item to get image URL
-      const item = items.find(i => i.id === id)
-      if (item && item.image_url) {
-        await deleteImageFromCloudinary(item.image_url)
+      const res = await fetch('/api/merchandise/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: itemToDelete.id }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to delete item')
       }
 
-      const { error } = await supabase.from('merchandise').delete().eq('id', id)
-      if (error) throw error
+      setDeleteDialogOpen(false)
+      setItemToDelete(null)
       await fetchMerchandise()
     } catch (error) {
       console.error('Error deleting merchandise:', error)
-      alert(error instanceof Error ? error.message : 'Failed to delete item')
+      setDeleteError(error instanceof Error ? error.message : 'Failed to delete item. Please try again.')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -231,6 +265,13 @@ export default function MerchandisePage() {
                 {editingId ? 'Update merchandise details' : 'Add a new merchandise item'}
               </DialogDescription>
             </DialogHeader>
+
+            {error && (
+              <Alert className="bg-red-50 border-red-200">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">{error}</AlertDescription>
+              </Alert>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -332,7 +373,7 @@ export default function MerchandisePage() {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => deleteItem(item.id)}
+                    onClick={() => confirmDelete(item)}
                     className="flex-1"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -343,6 +384,49 @@ export default function MerchandisePage() {
           ))
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Merchandise Item</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>{itemToDelete?.name}</strong>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          {deleteError && (
+            <Alert className="bg-red-50 border-red-200">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">{deleteError}</AlertDescription>
+            </Alert>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault()
+                deleteItem()
+              }}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { RideHailing } from '@/components/ride-hailing';
 import { CheckCircle, AlertCircle, Calendar, Clock, MapPin } from 'lucide-react';
 
 interface Event {
@@ -17,14 +18,15 @@ interface Event {
   title: string;
   description: string;
   date: string;
-  time: string;
-  location: string;
-  meetup_point: string;
+  time?: string;
+  location_name: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export default function JoinRunPage() {
   const router = useRouter();
-  const { user, isLoading } = useAuth();
+  const { user, loading: isLoading } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string>('');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -80,7 +82,7 @@ export default function JoinRunPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedEventId) {
+    if (!selectedEventId || !selectedEvent) {
       setMessage({ type: 'error', text: 'Please select an event' });
       return;
     }
@@ -91,19 +93,36 @@ export default function JoinRunPage() {
     }
 
     setLoading(true);
+    setMessage(null);
     try {
+      // Check if user already registered for this event
+      const { data: existingReg } = await supabase
+        .from('event_registrations')
+        .select('id')
+        .eq('user_id', user?.id)
+        .eq('event_id', selectedEventId)
+        .single();
+
+      if (existingReg) {
+        setMessage({ type: 'error', text: 'You have already registered for this event.' });
+        setLoading(false);
+        return;
+      }
+
       // Register for event
       const { error: registrationError } = await supabase
         .from('event_registrations')
         .insert([
           {
             user_id: user?.id,
-            event_id: selectedEventId,
-            registration_date: new Date().toISOString()
+            event_id: selectedEventId
           }
         ]);
 
-      if (registrationError) throw registrationError;
+      if (registrationError) {
+        console.error('Registration error:', registrationError);
+        throw new Error(registrationError.message || 'Failed to register for event');
+      }
 
       // Update phone number if provided
       if (phoneNumber && phoneNumber !== user?.phone_number) {
@@ -112,15 +131,19 @@ export default function JoinRunPage() {
           .update({ phone_number: phoneNumber })
           .eq('id', user?.id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Update error:', updateError);
+          // Don't fail registration if phone update fails
+        }
       }
 
       setMessage({
         type: 'success',
-        text: 'Successfully registered for the event! Check your email for confirmation.'
+        text: `Successfully registered for ${selectedEvent.title}! Check your email for confirmation.`
       });
       setSelectedEventId('');
       setSelectedEvent(null);
+      setPhoneNumber(user?.phone_number || '');
 
       // Clear form after success
       setTimeout(() => {
@@ -128,9 +151,10 @@ export default function JoinRunPage() {
       }, 5000);
     } catch (error) {
       console.error('Registration error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Failed to register for event. Please try again.';
       setMessage({
         type: 'error',
-        text: 'Failed to register for event. Please try again.'
+        text: errorMsg
       });
     } finally {
       setLoading(false);
@@ -155,7 +179,7 @@ export default function JoinRunPage() {
   return (
     <>
       <Navigation />
-      <main className="min-h-screen bg-black pt-20 py-12">
+      <main className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black pt-20 py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
@@ -163,18 +187,18 @@ export default function JoinRunPage() {
               <img src="/icon.svg" alt="WalkEnd WeekEnd" className="w-8 h-8" />
               <h1 className="text-4xl font-bold text-white mb-0">Join a Run</h1>
             </div>
-            <p className="text-gray-400">Register for upcoming runs and connect with our running community</p>
+            <p className="text-gray-400 text-lg">Register for upcoming runs and connect with our running community</p>
           </div>
 
           {message && (
-            <Alert className={`mb-6 ${message.type === 'success' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+            <Alert className={`mb-6 border-2 ${message.type === 'success' ? 'bg-emerald-950 border-emerald-700' : 'bg-red-950 border-red-700'}`}>
               <div className="flex items-start gap-3">
                 {message.type === 'success' ? (
-                  <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                  <CheckCircle className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
                 ) : (
-                  <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                 )}
-                <AlertDescription className={message.type === 'success' ? 'text-green-800' : 'text-red-800'}>
+                <AlertDescription className={message.type === 'success' ? 'text-emerald-200' : 'text-red-200'}>
                   {message.text}
                 </AlertDescription>
               </div>
@@ -183,24 +207,25 @@ export default function JoinRunPage() {
 
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Form Section */}
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold text-white mb-4">Register for an Event</h2>
+            <Card className="p-6 bg-gray-950 border border-gray-800 rounded-xl shadow-lg">
+              <h2 className="text-xl font-semibold text-white mb-6">Register for an Event</h2>
               
               {events.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-600">No upcoming events at this time.</p>
+                  <p className="text-gray-400">No upcoming events at this time.</p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-5">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Event
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Select Event *
                     </label>
                     <select
                       value={selectedEventId}
                       onChange={(e) => setSelectedEventId(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
                       aria-label="Select an event to join"
+                      required
                     >
                       <option value="">Choose an event...</option>
                       {events.map((event) => (
@@ -212,7 +237,7 @@ export default function JoinRunPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Phone Number (Optional)
                     </label>
                     <Input
@@ -220,9 +245,9 @@ export default function JoinRunPage() {
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                       placeholder="e.g., +233 24 123 4567"
-                      className="w-full"
+                      className="w-full bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:ring-orange-500 focus:border-transparent"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 mt-2">
                       We&apos;ll use this to send event updates and reminders
                     </p>
                   </div>
@@ -230,7 +255,7 @@ export default function JoinRunPage() {
                   <Button
                     type="submit"
                     disabled={loading || !selectedEventId}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Registering...' : 'Register for Event'}
                   </Button>
@@ -241,14 +266,14 @@ export default function JoinRunPage() {
             {/* Event Details Section */}
             <div className="space-y-4">
               {selectedEvent ? (
-                <Card className="p-6 bg-orange-50 border-orange-200">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">{selectedEvent.title}</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <Calendar className="w-5 h-5 text-orange-600 mt-0.5 shrink-0" />
+                <Card className="p-6 bg-gradient-to-br from-gray-900 to-gray-950 border border-orange-900/30 rounded-xl shadow-lg">
+                  <h3 className="text-lg font-semibold text-white mb-4">{selectedEvent.title}</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3 pb-3 border-b border-gray-800">
+                      <Calendar className="w-5 h-5 text-orange-500 mt-0.5 shrink-0" />
                       <div>
-                        <p className="text-sm font-medium text-gray-700">Date</p>
-                        <p className="text-gray-600">
+                        <p className="text-xs font-medium text-gray-400 uppercase">Date</p>
+                        <p className="text-gray-200 font-medium">
                           {new Date(selectedEvent.date).toLocaleDateString('en-US', {
                             weekday: 'long',
                             year: 'numeric',
@@ -259,42 +284,65 @@ export default function JoinRunPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-start gap-3">
-                      <Clock className="w-5 h-5 text-orange-600 mt-0.5 shrink-0" />
+                    <div className="flex items-start gap-3 pb-3 border-b border-gray-800">
+                      <Clock className="w-5 h-5 text-orange-500 mt-0.5 shrink-0" />
                       <div>
-                        <p className="text-sm font-medium text-gray-700">Time</p>
-                        <p className="text-gray-600">{selectedEvent.time}</p>
+                        <p className="text-xs font-medium text-gray-400 uppercase">Time</p>
+                        <p className="text-gray-200 font-medium">{selectedEvent.time || new Date(selectedEvent.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
                     </div>
 
-                    <div className="flex items-start gap-3">
-                      <MapPin className="w-5 h-5 text-orange-600 mt-0.5 shrink-0" />
+                    <div className="flex items-start gap-3 pb-3 border-b border-gray-800">
+                      <MapPin className="w-5 h-5 text-orange-500 mt-0.5 shrink-0" />
                       <div>
-                        <p className="text-sm font-medium text-gray-700">Location</p>
-                        <p className="text-gray-600">{selectedEvent.location}</p>
-                        <p className="text-sm text-gray-500 mt-1">Meetup: {selectedEvent.meetup_point}</p>
+                        <p className="text-xs font-medium text-gray-400 uppercase">Location</p>
+                        <p className="text-gray-200 font-medium">{selectedEvent.location_name}</p>
                       </div>
                     </div>
 
-                    <div className="pt-2">
-                      <p className="text-sm font-medium text-gray-700 mb-1">Description</p>
-                      <p className="text-gray-600 text-sm">{selectedEvent.description}</p>
+                    <div className="pt-3">
+                      <p className="text-xs font-medium text-gray-400 uppercase mb-2">Description</p>
+                      <p className="text-gray-300 text-sm leading-relaxed">{selectedEvent.description}</p>
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-800">
+                      <RideHailing
+                        latitude={selectedEvent.latitude ?? null}
+                        longitude={selectedEvent.longitude ?? null}
+                        eventTitle={selectedEvent.title}
+                        eventLocation={selectedEvent.location_name}
+                      />
                     </div>
                   </div>
                 </Card>
               ) : (
-                <Card className="p-6 text-center text-gray-500">
-                  <p>Select an event to see details</p>
+                <Card className="p-6 text-center bg-gray-950 border border-gray-800 rounded-xl">
+                  <p className="text-gray-400">Select an event to see details</p>
                 </Card>
               )}
 
-              <Card className="p-4 bg-blue-50 border-blue-200">
-                <h4 className="font-medium text-blue-900 mb-2">After Registration</h4>
-                <ul className="text-sm text-blue-800 space-y-1">
-                  <li>✓ Confirmation email sent to your inbox</li>
-                  <li>✓ Event updates and reminders via email</li>
-                  <li>✓ Add to your calendar</li>
-                  <li>✓ Connect with other runners</li>
+              <Card className="p-5 bg-gradient-to-br from-orange-950 to-orange-900 border border-orange-800 rounded-xl shadow-lg">
+                <h4 className="font-semibold text-orange-100 mb-3 flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4" />
+                  After Registration
+                </h4>
+                <ul className="text-sm text-orange-100 space-y-2">
+                  <li className="flex items-center gap-2">
+                    <span className="text-orange-400">✓</span>
+                    Confirmation email sent to your inbox
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-orange-400">✓</span>
+                    Event updates and reminders via email
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-orange-400">✓</span>
+                    Add to your calendar
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-orange-400">✓</span>
+                    Connect with other runners
+                  </li>
                 </ul>
               </Card>
             </div>

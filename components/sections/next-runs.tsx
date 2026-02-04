@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Calendar, MapPin, ArrowRight } from 'lucide-react'
+import { Calendar, MapPin, ArrowRight, MapIcon } from 'lucide-react'
 
 interface Event {
   id: string
@@ -120,6 +120,23 @@ export default function NextRuns() {
                     <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
+
+                {(event.latitude && event.longitude) && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <a href={`https://uber.com/dir?saddr=Current%20Location&daddr=${event.latitude},${event.longitude}`} target="_blank" rel="noopener noreferrer">
+                      <Button variant="outline" className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent">
+                        <MapIcon className="w-3 h-3 mr-1" />
+                        Uber
+                      </Button>
+                    </a>
+                    <a href="https://yango.app/" target="_blank" rel="noopener noreferrer">
+                      <Button variant="outline" className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent">
+                        <MapIcon className="w-3 h-3 mr-1" />
+                        Yango
+                      </Button>
+                    </a>
+                  </div>
+                )}
               </div>
             </Card>
           ))}
