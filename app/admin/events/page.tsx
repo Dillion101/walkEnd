@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Trash2, Edit2, Plus, AlertCircle, Users, Download, X } from 'lucide-react'
-import { uploadToCloudinary } from '@/lib/cloudinary'
+import { uploadToCloudinary, deleteImageFromCloudinary } from '@/lib/cloudinary'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface Event {

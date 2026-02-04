@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { Copy, CheckCircle, Smartphone } from 'lucide-react'
 
@@ -18,8 +18,6 @@ const hasValidCoords = (lat: number | null, lng: number | null) =>
 export function RideHailing({ latitude, longitude, eventTitle, eventLocation }: RideHailingProps) {
   const [isMobile, setIsMobile] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [yangoWidgetLoaded, setYangoWidgetLoaded] = useState(false)
-  const yangoLinkRef = useRef<HTMLAnchorElement>(null)
 
   const hasCoords = hasValidCoords(latitude, longitude)
 
@@ -27,20 +25,6 @@ export function RideHailing({ latitude, longitude, eventTitle, eventLocation }: 
     const ua = navigator.userAgent.toLowerCase()
     setIsMobile(/android|iphone|ipad|ipod/i.test(ua))
   }, [])
-
-  // Load Yango widget script (match ApartmentMap - use https)
-  useEffect(() => {
-    if (!yangoWidgetLoaded && hasCoords) {
-      const script = document.createElement('script')
-      script.src = 'https://yastatic.net/taxi-widget/ya-taxi-widget.js'
-      script.async = true
-      script.onload = () => setYangoWidgetLoaded(true)
-      document.body.appendChild(script)
-      return () => {
-        if (document.body.contains(script)) document.body.removeChild(script)
-      }
-    }
-  }, [yangoWidgetLoaded, hasCoords])
 
   /** Copy: coordinates first if valid (not 0,0), else location name */
   const copyLocation = () => {
@@ -64,6 +48,34 @@ export function RideHailing({ latitude, longitude, eventTitle, eventLocation }: 
       setTimeout(() => window.open(webFallback, '_blank'), 1500)
     } else {
       window.open(webFallback, '_blank')
+    }
+  }
+
+  /** Yango - handles both mobile app and web */
+  const openYango = () => {
+    if (!hasCoords) return
+    
+    // For Ghana: use Yango web as primary, but try app on mobile
+    const address = encodeURIComponent(eventLocation)
+    
+    if (isMobile) {
+      // Try to open Yango app with coordinates
+      // App scheme: com.yandex.taxi:// or yandex.taxi://
+      const appDeepLink = `yandex.taxi://route?end_lat=${latitude}&end_lon=${longitude}`
+      
+      // Web fallback URL
+      const webUrl = `https://yango.com/gh/order?gfrom=current&gto=${longitude},${latitude}&ref=walkend`
+      
+      // Try app first
+      window.location.href = appDeepLink
+      
+      // If app doesn't open in 2 seconds, open web
+      setTimeout(() => {
+        window.open(webUrl, '_blank')
+      }, 2000)
+    } else {
+      // Desktop: open web directly
+      window.open(`https://yango.com/gh/order?gfrom=current&gto=${longitude},${latitude}&ref=walkend`, '_blank')
     }
   }
 
@@ -105,36 +117,19 @@ export function RideHailing({ latitude, longitude, eventTitle, eventLocation }: 
         </div>
       )}
 
-      {/* Yango widget - replicate ApartmentMap: data-point-b is longitude,latitude */}
+      {/* Yango - only when valid coordinates */}
       {hasCoords && (
         <div className="border border-gray-700 rounded-lg p-3 hover:border-yellow-500 transition-colors">
           <div className="flex items-center justify-center h-8 mb-3 bg-yellow-400 rounded">
             <Image src="/yango.jpg" alt="Yango" width={80} height={32} className="h-8 w-auto object-contain" />
           </div>
-          <div
-            className="ya-taxi-widget"
-            data-ref="walkend"
-            data-apikey="951a2f8d262547d8a5fc63f70cf54552"
-            data-use-location="true"
-            data-point-b={`${longitude},${latitude}`}
-            data-custom-layout="true"
-            data-lang="en"
-            data-proxy-url={`https://yango.go.link/route?start-lat={start-lat}&start-lon={start-lon}&end-lat=${latitude}&end-lon=${longitude}&adj_adgroup=widget&ref=walkend&adj_t=vokme8e_nd9s9z9&lang=en&adj_deeplink_js=1&utm_source=widget&adj_fallback=https%3A%2F%2Fyango.com%2Fen_int%2Forder%2F%3Fgfrom%3D{start-lon}%2C{start-lat}%26gto%3D${longitude}%2C${latitude}%26ref%3Dwalkend`}
+          <button
+            onClick={openYango}
+            className="w-full bg-yellow-600 hover:bg-yellow-700 text-white text-xs py-2 rounded transition-colors font-semibold flex items-center justify-center gap-1"
           >
-            <div data-description="true" className="hidden" />
-            <div>
-              <a
-                href="#"
-                data-link="true"
-                ref={yangoLinkRef}
-                className="w-full px-3 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 flex items-center justify-center gap-2 text-sm font-semibold"
-              >
-                <Smartphone size={16} />
-                <span>Book Ride</span>
-              </a>
-            </div>
-            <div data-disclaimer="true" className="hidden" />
-          </div>
+            <Smartphone size={14} />
+            Book Ride
+          </button>
         </div>
       )}
     </div>

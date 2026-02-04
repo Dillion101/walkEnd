@@ -41,9 +41,16 @@ export default function EventCalendarPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [copiedEventId, setCopiedEventId] = useState<string | null>(null);
   const [registeredEventIds, setRegisteredEventIds] = useState<Set<string>>(new Set());
+  const [isMobile, setIsMobile] = useState(false);
 
   // Check if user is registered for an event
   const isRegistered = (eventId: string) => registeredEventIds.has(eventId);
+
+  // Detect mobile device
+  useEffect(() => {
+    const ua = navigator.userAgent.toLowerCase();
+    setIsMobile(/android|iphone|ipad|ipod/i.test(ua));
+  }, []);
 
   // Copy: coordinates first if admin added them (and not 0,0), else location name
   const hasValidCoords = (lat: number, lng: number) =>
@@ -68,13 +75,27 @@ export default function EventCalendarPage() {
     window.open(webFallback, '_blank');
   };
 
-  // Yango: gto param is longitude,latitude. Fallback to location name when no valid coords
+  // Yango: handles both mobile app and web
   const openYango = (event: Event) => {
-    if (hasValidCoords(event.latitude, event.longitude)) {
-      window.open(`https://yango.com/en_int/order/?gto=${event.longitude},${event.latitude}&ref=walkend`, '_blank');
+    if (!hasValidCoords(event.latitude, event.longitude)) return;
+    
+    if (isMobile) {
+      // Try to open Yango app with coordinates
+      const appDeepLink = `yandex.taxi://route?end_lat=${event.latitude}&end_lon=${event.longitude}`;
+      
+      // Web fallback URL
+      const webUrl = `https://yango.com/gh/order?gfrom=current&gto=${event.longitude},${event.latitude}&ref=walkend`;
+      
+      // Try app first
+      window.location.href = appDeepLink;
+      
+      // If app doesn't open in 2 seconds, open web
+      setTimeout(() => {
+        window.open(webUrl, '_blank');
+      }, 2000);
     } else {
-      const encoded = encodeURIComponent(event.location_name);
-      window.open(`https://yango.com/en_int/order/?gto=${encoded}&ref=walkend`, '_blank');
+      // Desktop: open web directly
+      window.open(`https://yango.com/gh/order?gfrom=current&gto=${event.longitude},${event.latitude}&ref=walkend`, '_blank');
     }
   };
 
@@ -109,7 +130,9 @@ export default function EventCalendarPage() {
   useEffect(() => {
     const fetchUserRegistrations = async () => {
       const userId = session?.user?.id ?? user?.id;
+      console.log('Fetching registrations for user:', userId);
       if (!userId) {
+        console.log('No user ID found');
         setRegisteredEventIds(new Set());
         return;
       }
@@ -118,8 +141,7 @@ export default function EventCalendarPage() {
         const { data, error } = await supabase
           .from('event_registrations')
           .select('event_id')
-          .eq('user_id', userId)
-          .eq('status', 'registered');
+          .eq('user_id', userId);
 
         if (error) {
           console.error('Error fetching registrations:', error);
@@ -127,13 +149,16 @@ export default function EventCalendarPage() {
         }
 
         const eventIds = new Set(data?.map(r => r.event_id) || []);
+        console.log('Registered event IDs:', Array.from(eventIds));
         setRegisteredEventIds(eventIds);
       } catch (error) {
         console.error('Error fetching user registrations:', error);
       }
     };
 
-    fetchUserRegistrations();
+    if (session?.user?.id || user?.id) {
+      fetchUserRegistrations();
+    }
   }, [session?.user?.id, user?.id]);
 
   // Generate calendar days
@@ -169,7 +194,13 @@ export default function EventCalendarPage() {
       
       const dayEvents = events.filter(e => e.date.startsWith(dateStr));
       const isToday = dayDate.getTime() === today.getTime();
-      const hasRegisteredEvent = dayEvents.some(e => registeredEventIds.has(e.id));
+      const hasRegisteredEvent = dayEvents.some(e => {
+        const isReg = registeredEventIds.has(e.id);
+        if (isReg) {
+          console.log(`Event ${e.id} (${e.title}) on ${dateStr} is registered`);
+        }
+        return isReg;
+      });
 
       days.push({
         date: i,
@@ -305,9 +336,9 @@ export default function EventCalendarPage() {
                           transition-all duration-200 relative group
                           ${!day.isCurrentMonth ? 'bg-card/50 text-gray-600 cursor-default' : ''}
                           ${day.isCurrentMonth && !day.isToday && !day.events.length ? 'bg-card border border-border hover:border-accent hover:bg-card/80 text-white cursor-pointer' : ''}
-                          ${day.isToday ? 'bg-gradient-to-br from-accent to-accent/80 text-background font-bold shadow-lg shadow-accent/50 ring-2 ring-accent/30' : ''}
-                          ${day.isCurrentMonth && day.events.length > 0 && !day.isToday && day.hasRegisteredEvent ? 'bg-gradient-to-br from-green-500/20 to-green-600/20 border-2 border-green-400 text-white hover:from-green-500/30 hover:to-green-600/30 cursor-pointer' : ''}
-                          ${day.isCurrentMonth && day.events.length > 0 && !day.isToday && !day.hasRegisteredEvent ? 'bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-2 border-blue-400 text-white hover:from-blue-500/30 hover:to-blue-600/30 cursor-pointer' : ''}
+                          ${day.isToday ? 'bg-linear-to-br from-accent to-accent/80 text-background font-bold shadow-lg shadow-accent/50 ring-2 ring-accent/30' : ''}
+                          ${day.isCurrentMonth && day.events.length > 0 && !day.isToday && day.hasRegisteredEvent ? 'bg-linear-to-br from-green-500/20 to-green-600/20 border-2 border-green-400 text-white hover:from-green-500/30 hover:to-green-600/30 cursor-pointer' : ''}
+                          ${day.isCurrentMonth && day.events.length > 0 && !day.isToday && !day.hasRegisteredEvent ? 'bg-linear-to-br from-blue-500/20 to-blue-600/20 border-2 border-blue-400 text-white hover:from-blue-500/30 hover:to-blue-600/30 cursor-pointer' : ''}
                         `}
                       >
                         <span>{day.date}</span>
@@ -321,17 +352,17 @@ export default function EventCalendarPage() {
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Legend</p>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 bg-gradient-to-br from-accent to-accent/80 rounded text-white flex items-center justify-center text-xs">✓</div>
+                      <div className="w-6 h-6 bg-linear-to-br from-accent to-accent/80 rounded text-white flex items-center justify-center text-xs">✓</div>
                       <span className="text-gray-300">Today</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 bg-gradient-to-br from-green-500/20 to-green-600/20 border-2 border-green-400 rounded flex items-center justify-center">
+                      <div className="w-6 h-6 bg-linear-to-br from-green-500/20 to-green-600/20 border-2 border-green-400 rounded flex items-center justify-center">
                         <Check className="w-3 h-3 text-green-400" />
                       </div>
                       <span className="text-gray-300">Registered</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-2 border-blue-400 rounded"></div>
+                      <div className="w-6 h-6 bg-linear-to-br from-blue-500/20 to-blue-600/20 border-2 border-blue-400 rounded"></div>
                       <span className="text-gray-300">Events scheduled</span>
                     </div>
                   </div>
@@ -367,7 +398,7 @@ export default function EventCalendarPage() {
                         
                         <div className="space-y-2 mb-4">
                           <div className="flex items-center gap-2 text-xs text-gray-400">
-                            <Calendar className="w-4 h-4 text-accent flex-shrink-0" />
+                            <Calendar className="w-4 h-4 text-accent shrink-0" />
                             <span>{new Date(event.date).toLocaleDateString('en-US', {
                               month: 'short',
                               day: 'numeric',
@@ -376,7 +407,7 @@ export default function EventCalendarPage() {
                           </div>
                           
                           <div className="flex items-center gap-2 text-xs text-gray-400">
-                            <MapPin className="w-4 h-4 text-accent flex-shrink-0" />
+                            <MapPin className="w-4 h-4 text-accent shrink-0" />
                             <span className="line-clamp-2">{event.location_name}</span>
                           </div>
 
