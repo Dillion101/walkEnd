@@ -78,25 +78,8 @@ export default function EventCalendarPage() {
   // Yango: handles both mobile app and web
   const openYango = (event: Event) => {
     if (!hasValidCoords(event.latitude, event.longitude)) return;
-    
-    if (isMobile) {
-      // Try to open Yango app with coordinates
-      const appDeepLink = `yandex.taxi://route?end_lat=${event.latitude}&end_lon=${event.longitude}`;
-      
-      // Web fallback URL
-      const webUrl = `https://yango.com/gh/order?gfrom=current&gto=${event.longitude},${event.latitude}&ref=walkend`;
-      
-      // Try app first
-      window.location.href = appDeepLink;
-      
-      // If app doesn't open in 2 seconds, open web
-      setTimeout(() => {
-        window.open(webUrl, '_blank');
-      }, 2000);
-    } else {
-      // Desktop: open web directly
-      window.open(`https://yango.com/gh/order?gfrom=current&gto=${event.longitude},${event.latitude}&ref=walkend`, '_blank');
-    }
+    const yangoUniversalLink = `https://yango.go.link/route?end-lat=${event.latitude}&end-lon=${event.longitude}&app_launch_method=detect&ref=walkend`;
+    window.open(yangoUniversalLink, '_blank');
   };
 
   // Fetch events

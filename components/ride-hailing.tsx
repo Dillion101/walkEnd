@@ -52,31 +52,17 @@ export function RideHailing({ latitude, longitude, eventTitle, eventLocation }: 
   }
 
   /** Yango - handles both mobile app and web */
+/** Yango - Handles App and Web automatically via Universal Link */
   const openYango = () => {
     if (!hasCoords) return
     
-    // For Ghana: use Yango web as primary, but try app on mobile
-    const address = encodeURIComponent(eventLocation)
+    // We replace the manual deep link + timeout logic with the Universal Link
+    // found in your working ApartmentMap.tsx (data-proxy-url)
+    const yangoUniversalLink = `https://yango.go.link/route?end-lat=${latitude}&end-lon=${longitude}&app_launch_method=detect&ref=walkend`
     
-    if (isMobile) {
-      // Try to open Yango app with coordinates
-      // App scheme: com.yandex.taxi:// or yandex.taxi://
-      const appDeepLink = `yandex.taxi://route?end_lat=${latitude}&end_lon=${longitude}`
-      
-      // Web fallback URL
-      const webUrl = `https://yango.com/gh/order?gfrom=current&gto=${longitude},${latitude}&ref=walkend`
-      
-      // Try app first
-      window.location.href = appDeepLink
-      
-      // If app doesn't open in 2 seconds, open web
-      setTimeout(() => {
-        window.open(webUrl, '_blank')
-      }, 2000)
-    } else {
-      // Desktop: open web directly
-      window.open(`https://yango.com/gh/order?gfrom=current&gto=${longitude},${latitude}&ref=walkend`, '_blank')
-    }
+    // On mobile, this will try to open the app system-level. 
+    // If not installed, it redirects to the web/store.
+    window.open(yangoUniversalLink, '_blank')
   }
 
   return (
