@@ -180,35 +180,35 @@ export default function JoinRunPage() {
     <>
       <Navigation />
       <main className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black pt-20 py-12">
-      <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <img src="/icon.svg" alt="WalkEnd WeekEnd" className="w-8 h-8" />
-              <h1 className="text-4xl font-bold text-white mb-0">Join a Run</h1>
-            </div>
-            <p className="text-gray-400 text-lg">Register for upcoming runs and connect with our running community</p>
-          </div>
-
-          {message && (
-            <Alert className={`mb-6 border-2 ${message.type === 'success' ? 'bg-emerald-950 border-emerald-700' : 'bg-red-950 border-red-700'}`}>
-              <div className="flex items-start gap-3">
-                {message.type === 'success' ? (
-                  <CheckCircle className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
-                )}
-                <AlertDescription className={message.type === 'success' ? 'text-emerald-200' : 'text-red-200'}>
-                  {message.text}
-                </AlertDescription>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-4 flex-wrap">
+                <img src="/icon.svg" alt="WalkEnd WeekEnd" className="w-8 h-8" />
+                <h1 className="text-3xl sm:text-4xl font-bold text-white">Join a Run</h1>
               </div>
-            </Alert>
-          )}
+              <p className="text-gray-400 text-base sm:text-lg">Register for upcoming runs and connect with our running community</p>
+            </div>
 
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Form Section */}
-            <Card className="p-6 bg-gray-950 border border-gray-800 rounded-xl shadow-lg">
-              <h2 className="text-xl font-semibold text-white mb-6">Register for an Event</h2>
+            {message && (
+              <Alert className={`mb-6 border-2 ${message.type === 'success' ? 'bg-emerald-950 border-emerald-700' : 'bg-red-950 border-red-700'}`}>
+                <div className="flex items-start gap-3">
+                  {message.type === 'success' ? (
+                    <CheckCircle className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                  )}
+                  <AlertDescription className={message.type === 'success' ? 'text-emerald-200' : 'text-red-200'}>
+                    {message.text}
+                  </AlertDescription>
+                </div>
+              </Alert>
+            )}
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+              {/* Form Section */}
+              <Card className="p-4 sm:p-6 bg-gray-950 border border-gray-800 rounded-xl shadow-lg">
+                <h2 className="text-lg sm:text-xl font-semibold text-white mb-6">Register for an Event</h2>
               
               {events.length === 0 ? (
                 <div className="text-center py-8">
@@ -266,14 +266,14 @@ export default function JoinRunPage() {
             {/* Event Details Section */}
             <div className="space-y-4">
               {selectedEvent ? (
-                <Card className="p-6 bg-gradient-to-br from-gray-900 to-gray-950 border border-orange-900/30 rounded-xl shadow-lg">
-                  <h3 className="text-lg font-semibold text-white mb-4">{selectedEvent.title}</h3>
-                  <div className="space-y-4">
+                <Card className="p-4 sm:p-6 bg-gradient-to-br from-gray-900 to-gray-950 border border-orange-900/30 rounded-xl shadow-lg">
+                  <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 break-words">{selectedEvent.title}</h3>
+                  <div className="space-y-3 sm:space-y-4">
                     <div className="flex items-start gap-3 pb-3 border-b border-gray-800">
                       <Calendar className="w-5 h-5 text-orange-500 mt-0.5 shrink-0" />
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-xs font-medium text-gray-400 uppercase">Date</p>
-                        <p className="text-gray-200 font-medium">
+                        <p className="text-gray-200 font-medium text-sm break-words">
                           {new Date(selectedEvent.date).toLocaleDateString('en-US', {
                             weekday: 'long',
                             year: 'numeric',
@@ -286,17 +286,17 @@ export default function JoinRunPage() {
 
                     <div className="flex items-start gap-3 pb-3 border-b border-gray-800">
                       <Clock className="w-5 h-5 text-orange-500 mt-0.5 shrink-0" />
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-xs font-medium text-gray-400 uppercase">Time</p>
-                        <p className="text-gray-200 font-medium">{selectedEvent.time || new Date(selectedEvent.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
+                        <p className="text-gray-200 font-medium text-sm">{selectedEvent.time || new Date(selectedEvent.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
                     </div>
 
                     <div className="flex items-start gap-3 pb-3 border-b border-gray-800">
                       <MapPin className="w-5 h-5 text-orange-500 mt-0.5 shrink-0" />
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-xs font-medium text-gray-400 uppercase">Location</p>
-                        <p className="text-gray-200 font-medium">{selectedEvent.location_name}</p>
+                        <p className="text-gray-200 font-medium text-sm break-words">{selectedEvent.location_name}</p>
                       </div>
                     </div>
 
@@ -317,16 +317,16 @@ export default function JoinRunPage() {
                 </Card>
               ) : (
                 <Card className="p-6 text-center bg-gray-950 border border-gray-800 rounded-xl">
-                  <p className="text-gray-400">Select an event to see details</p>
+                  <p className="text-gray-400 text-sm">Select an event to see details</p>
                 </Card>
               )}
 
               <Card className="p-5 bg-gradient-to-br from-orange-950 to-orange-900 border border-orange-800 rounded-xl shadow-lg">
-                <h4 className="font-semibold text-orange-100 mb-3 flex items-center gap-2">
+                <h4 className="font-semibold text-orange-100 mb-3 flex items-center gap-2 text-sm sm:text-base">
                   <CheckCircle className="w-4 h-4" />
                   After Registration
                 </h4>
-                <ul className="text-sm text-orange-100 space-y-2">
+                <ul className="text-xs sm:text-sm text-orange-100 space-y-2">
                   <li className="flex items-center gap-2">
                     <span className="text-orange-400">✓</span>
                     Confirmation email sent to your inbox

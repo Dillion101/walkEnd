@@ -93,15 +93,15 @@ export default function TrainingTipsPage() {
     <>
       <Navigation />
       <main className="min-h-screen bg-black pt-20 py-12">
-      <div className="container mx-auto px-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="mb-12">
-            <div className="flex items-center gap-3 mb-4">
-              <img src="/icon.svg" alt="WalkEnd WeekEnd" className="w-8 h-8" />
-              <h1 className="text-4xl font-bold text-white mb-0">Training Tips</h1>
-            </div>
-            <p className="text-gray-400">Expert guidance to improve your running performance</p>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-6xl mx-auto">
+            {/* Header */}
+            <div className="mb-8 sm:mb-12">
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <img src="/icon.svg" alt="WalkEnd WeekEnd" className="w-8 h-8" />
+                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-0">Training Tips</h1>
+              </div>
+              <p className="text-gray-400 text-sm sm:text-base">Expert guidance to improve your running performance</p>
 
             {/* Search */}
             <div className="relative mb-8">

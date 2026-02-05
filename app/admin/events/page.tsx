@@ -335,7 +335,7 @@ export default function EventsPage() {
               New Event
             </Button>
           </DialogTrigger>
-          <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] max-w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingId ? 'Edit Event' : 'Create New Event'}</DialogTitle>
               <DialogDescription>
@@ -506,41 +506,43 @@ export default function EventsPage() {
           events.map((event) => (
             <Card key={event.id}>
               <CardContent className="pt-6">
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-4">
                   {event.image_url && (
                     <img
                       src={event.image_url}
                       alt={event.title}
-                      className="w-24 h-24 rounded object-cover"
+                      className="w-full sm:w-24 sm:h-24 h-auto rounded object-cover"
                     />
                   )}
-                  <div className="flex-1">
-                    <h3 className="font-bold text-lg">{event.title}</h3>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-lg break-words">{event.title}</h3>
                     <p className="text-sm text-muted-foreground mb-2">
                       {new Date(event.date).toLocaleString()}
                     </p>
-                    <p className="text-sm mb-2">{event.description}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm mb-2 line-clamp-2">{event.description}</p>
+                    <p className="text-xs text-muted-foreground break-words">
                       📍 {event.location_name} 
                       {event.latitude && event.longitude ? ` (${event.latitude.toFixed(4)}, ${event.longitude.toFixed(4)})` : ''}
                     </p>
                   </div>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 w-full sm:w-auto">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => viewRegistrations(event)}
-                      className="flex items-center gap-1"
+                      className="flex items-center gap-1 justify-center sm:justify-start"
                     >
                       <Users className="w-4 h-4" />
                       <span className="hidden sm:inline">Registrations</span>
+                      <span className="sm:hidden">View</span>
                     </Button>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap sm:flex-col">
                       <AdminEventRouteButton event={event} />
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => editEvent(event)}
+                        className="flex-1 sm:flex-none"
                       >
                         <Edit2 className="w-4 h-4" />
                       </Button>
@@ -548,6 +550,7 @@ export default function EventsPage() {
                         variant="destructive"
                         size="sm"
                         onClick={() => deleteEvent(event.id)}
+                        className="flex-1 sm:flex-none"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -562,11 +565,11 @@ export default function EventsPage() {
 
       {/* Registrations Dialog */}
       <Dialog open={registrationsOpen} onOpenChange={setRegistrationsOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-[calc(100vw-2rem)] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
               <Users className="w-5 h-5" />
-              Registrations for {selectedEventForRegistrations?.title}
+              <span className="truncate">Registrations for {selectedEventForRegistrations?.title}</span>
             </DialogTitle>
             <DialogDescription>
               {selectedEventForRegistrations && new Date(selectedEventForRegistrations.date).toLocaleDateString('en-US', {
@@ -590,7 +593,7 @@ export default function EventsPage() {
             </div>
           ) : (
             <>
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                 <p className="text-sm font-medium">
                   Total: <span className="text-orange-500">{registrations.length}</span> registered
                 </p>
@@ -598,32 +601,32 @@ export default function EventsPage() {
                   variant="outline"
                   size="sm"
                   onClick={exportRegistrationsCSV}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 w-full sm:w-auto justify-center sm:justify-start"
                 >
                   <Download className="w-4 h-4" />
                   Export CSV
                 </Button>
               </div>
 
-              <div className="border rounded-lg overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted">
+              <div className="border rounded-lg overflow-x-auto">
+                <table className="w-full text-xs sm:text-sm">
+                  <thead className="bg-muted sticky top-0">
                     <tr>
-                      <th className="text-left px-4 py-3 font-medium">Name</th>
-                      <th className="text-left px-4 py-3 font-medium">Email</th>
-                      <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Phone</th>
-                      <th className="text-left px-4 py-3 font-medium">Status</th>
-                      <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Registered</th>
+                      <th className="text-left px-2 sm:px-4 py-3 font-medium">Name</th>
+                      <th className="text-left px-2 sm:px-4 py-3 font-medium hidden sm:table-cell">Email</th>
+                      <th className="text-left px-2 sm:px-4 py-3 font-medium hidden md:table-cell">Phone</th>
+                      <th className="text-left px-2 sm:px-4 py-3 font-medium">Status</th>
+                      <th className="text-left px-2 sm:px-4 py-3 font-medium hidden lg:table-cell">Registered</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {registrations.map((reg) => (
-                      <tr key={reg.id} className="hover:bg-muted/50">
-                        <td className="px-4 py-3 font-medium">{reg.users?.full_name || 'N/A'}</td>
-                        <td className="px-4 py-3 text-muted-foreground">{reg.users?.email || 'N/A'}</td>
-                        <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{reg.users?.phone_number || '-'}</td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      <tr key={reg.id} className="hover:bg-muted/50 text-xs sm:text-sm">
+                        <td className="px-2 sm:px-4 py-3 font-medium break-words">{reg.users?.full_name || 'N/A'}</td>
+                        <td className="px-2 sm:px-4 py-3 text-muted-foreground hidden sm:table-cell break-words text-xs">{reg.users?.email || 'N/A'}</td>
+                        <td className="px-2 sm:px-4 py-3 text-muted-foreground hidden md:table-cell text-xs">{reg.users?.phone_number || '-'}</td>
+                        <td className="px-2 sm:px-4 py-3">
+                          <span className={`px-2 py-1 rounded text-xs font-medium inline-block ${
                             reg.status === 'registered' ? 'bg-green-100 text-green-700' :
                             reg.status === 'cancelled' ? 'bg-red-100 text-red-700' :
                             'bg-blue-100 text-blue-700'
@@ -631,7 +634,7 @@ export default function EventsPage() {
                             {reg.status}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-muted-foreground text-xs hidden sm:table-cell">
+                        <td className="px-2 sm:px-4 py-3 text-muted-foreground text-xs hidden lg:table-cell">
                           {new Date(reg.registered_at).toLocaleDateString()}
                         </td>
                       </tr>

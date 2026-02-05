@@ -85,7 +85,7 @@ Base map container with markers and routes. Provides:
 
 ### 2. Event Route Viewer (`components/event-route-viewer.tsx`)
 Full-featured modal dialog with:
-- OSRM routing API integration
+- OpenRouteService API integration for walking routes
 - Multiple route calculation
 - Interactive route selection
 - 3D map toggle and reset
@@ -102,12 +102,12 @@ Simple button for admin panel:
 
 ## Key Features
 
-✅ **Multiple Routes** - Shows up to 3 alternative routes (fastest, shorter, scenic)
+✅ **Walking Routes** - Accurate estimated times for running/walking
+✅ **Multiple Routes** - Shows alternative route options
 ✅ **Route Selection** - Click to highlight and compare routes
 ✅ **3D Map View** - Tilt and rotate map for perspective visualization
 ✅ **Smart Buttons** - Route button only shows when end location is configured
 ✅ **Mobile Responsive** - Full functionality on phones and tablets
-✅ **No API Keys** - Uses free OSRM routing service
 ✅ **Admin Preview** - Admins can test routes before users see them
 
 ---
@@ -178,21 +178,21 @@ map?.easeTo({
 - ✅ Check MapLibre GL CSS is loaded
 
 ### Routes not calculating
+- ✅ Verify API key is set: `NEXT_PUBLIC_OPENROUTESERVICE_API_KEY` in `.env.local`
 - ✅ Verify coordinates are correct [longitude, latitude] order
-- ✅ Check OSRM API is accessible (`router.project-osrm.org`)
 - ✅ Try with different locations (some routes have no paths)
-- ✅ Check network tab in browser dev tools
+- ✅ Check network tab in browser dev tools for API errors
 
 ---
 
 ## API Details
 
-**OSRM (Open Street Routing Machine)**
-- **Endpoint:** `https://router.project-osrm.org/route/v1/driving/`
-- **Query:** `{lng1},{lat1};{lng2},{lat2}?overview=full&geometries=geojson&alternatives=true`
-- **Response:** Multiple route options with distance, duration, and coordinates
-- **Cost:** Free, no authentication required
-- **Rate Limit:** Fair use (no documented limit)
+**OpenRouteService**
+- **Endpoint:** `https://api.openrouteservice.org/v2/directions/foot-walking`
+- **Auth:** Requires `NEXT_PUBLIC_OPENROUTESERVICE_API_KEY` in `.env.local`
+- **Response:** Walking routes with distance and duration for accurate running times
+- **Cost:** Free tier available
+- **Note:** Get API key at https://openrouteservice.org/dev/#/login
 
 ---
 

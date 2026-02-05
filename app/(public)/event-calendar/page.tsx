@@ -272,28 +272,28 @@ export default function EventCalendarPage() {
       <main className="min-h-screen bg-background pt-24 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="mb-12 animate-fade-in">
-            <h1 className="text-5xl sm:text-6xl font-bold font-display text-white mb-4 animate-slide-up">Event Calendar</h1>
-            <p className="text-gray-400 text-lg max-w-2xl animate-slide-up animation-delay-100">
+          <div className="mb-8 sm:mb-12 animate-fade-in">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold font-display text-white mb-4 animate-slide-up leading-tight">Event Calendar</h1>
+            <p className="text-gray-400 text-sm sm:text-lg max-w-2xl animate-slide-up animation-delay-100">
               Discover and register for upcoming running events. All skill levels welcome.
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
             {/* Calendar Section */}
             <div className="lg:col-span-2">
-              <Card className="p-6 sm:p-8 bg-card border-border hover:border-accent/50 transition-all">
+              <Card className="p-4 sm:p-6 lg:p-8 bg-card border-border hover:border-accent/50 transition-all">
                 {/* Month Navigation */}
-                <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-3xl font-bold font-display text-white">{monthName}</h2>
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-6 sm:mb-8">
+                  <h2 className="text-2xl sm:text-3xl font-bold font-display text-white break-words flex-1">{monthName}</h2>
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={goToPreviousMonth}
                       className="p-2 hover:bg-accent/20 rounded-lg transition-all text-gray-400 hover:text-accent"
                       aria-label="Previous month"
                       title="Previous month"
                     >
-                      <ChevronLeft className="w-6 h-6" />
+                      <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
                     <button
                       onClick={goToNextMonth}
@@ -301,7 +301,7 @@ export default function EventCalendarPage() {
                       aria-label="Next month"
                       title="Next month"
                     >
-                      <ChevronRight className="w-6 h-6" />
+                      <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
                   </div>
                 </div>
@@ -309,16 +309,16 @@ export default function EventCalendarPage() {
                 {/* Calendar Grid */}
                 <div>
                   {/* Weekday Headers */}
-                  <div className="grid grid-cols-7 gap-2 mb-4">
+                  <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-3 sm:mb-4">
                     {weekDays.map(day => (
-                      <div key={day} className="text-center font-semibold text-xs text-gray-400 py-3">
+                      <div key={day} className="text-center font-semibold text-xs sm:text-sm text-gray-400 py-2 sm:py-3">
                         {day}
                       </div>
                     ))}
                   </div>
 
                   {/* Calendar Days */}
-                  <div className="grid grid-cols-7 gap-2">
+                  <div className="grid grid-cols-7 gap-1 sm:gap-2">
                     {calendarDays.map((day, idx) => (
                       <button
                         key={idx}
@@ -328,7 +328,7 @@ export default function EventCalendarPage() {
                           }
                         }}
                         className={`
-                          aspect-square flex flex-col items-center justify-center rounded-lg font-semibold text-sm
+                          aspect-square flex flex-col items-center justify-center rounded-lg font-semibold text-xs sm:text-sm
                           transition-all duration-200 relative group
                           ${!day.isCurrentMonth ? 'bg-card/50 text-gray-600 cursor-default' : ''}
                           ${day.isCurrentMonth && !day.isToday && !day.events.length ? 'bg-card border border-border hover:border-accent hover:bg-card/80 text-white cursor-pointer' : ''}
@@ -344,21 +344,21 @@ export default function EventCalendarPage() {
                 </div>
 
                 {/* Legend */}
-                <div className="mt-8 pt-6 border-t border-border space-y-3">
+                <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-border space-y-2 sm:space-y-3">
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Legend</p>
-                  <div className="space-y-2 text-sm">
+                  <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
                     <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 bg-linear-to-br from-accent to-accent/80 rounded text-white flex items-center justify-center text-xs">✓</div>
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 bg-linear-to-br from-accent to-accent/80 rounded text-white flex items-center justify-center text-xs flex-shrink-0">✓</div>
                       <span className="text-gray-300">Today</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 bg-linear-to-br from-green-500/20 to-green-600/20 border-2 border-green-400 rounded flex items-center justify-center">
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 bg-linear-to-br from-green-500/20 to-green-600/20 border-2 border-green-400 rounded flex items-center justify-center flex-shrink-0">
                         <Check className="w-3 h-3 text-green-400" />
                       </div>
                       <span className="text-gray-300">Registered</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 bg-linear-to-br from-blue-500/20 to-blue-600/20 border-2 border-blue-400 rounded"></div>
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 bg-linear-to-br from-blue-500/20 to-blue-600/20 border-2 border-blue-400 rounded flex-shrink-0"></div>
                       <span className="text-gray-300">Events scheduled</span>
                     </div>
                   </div>
@@ -368,34 +368,34 @@ export default function EventCalendarPage() {
 
             {/* Events Sidebar */}
             <div className="lg:col-span-1">
-              <Card className="p-6 sm:p-8 bg-card border-border sticky top-24">
-                <h3 className="text-xl font-bold font-display text-white mb-2">
+              <Card className="p-4 sm:p-6 lg:p-8 bg-card border-border lg:sticky lg:top-24 max-h-max">
+                <h3 className="text-lg sm:text-xl font-bold font-display text-white mb-2 break-words">
                   {selectedDate ? new Date(selectedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : `Events in ${monthName}`}
                 </h3>
-                <p className="text-gray-400 text-sm mb-6">
+                <p className="text-gray-400 text-xs sm:text-sm mb-4 sm:mb-6">
                   {selectedDate && getEventsForDate(selectedDate).length === 0 ? 'No events scheduled for this day' : 'Register for upcoming runs'}
                 </p>
 
                 {filteredEvents.length === 0 && !selectedDate ? (
-                  <div className="text-center py-12">
-                    <Calendar className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                    <p className="text-gray-400">No events scheduled</p>
+                  <div className="text-center py-8 sm:py-12">
+                    <Calendar className="w-10 h-10 sm:w-12 sm:h-12 text-gray-600 mx-auto mb-3 sm:mb-4" />
+                    <p className="text-gray-400 text-sm">No events scheduled</p>
                   </div>
                 ) : (
-                  <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                  <div className="space-y-2 sm:space-y-3 max-h-96 overflow-y-auto pr-1 sm:pr-2">
                     {(selectedDate ? getEventsForDate(selectedDate) : filteredEvents).map((event) => (
                       <div
                         key={event.id}
-                        className="p-4 border border-border bg-background/50 rounded-lg hover:border-accent hover:bg-background/80 transition-all duration-200 group"
+                        className="p-3 sm:p-4 border border-border bg-background/50 rounded-lg hover:border-accent hover:bg-background/80 transition-all duration-200 group"
                       >
-                        <h4 className="font-bold text-white text-sm mb-3 group-hover:text-accent transition-colors">
+                        <h4 className="font-bold text-white text-xs sm:text-sm mb-2 sm:mb-3 group-hover:text-accent transition-colors line-clamp-2">
                           {event.title}
                         </h4>
                         
-                        <div className="space-y-2 mb-4">
+                        <div className="space-y-1 sm:space-y-2 mb-3 sm:mb-4">
                           <div className="flex items-center gap-2 text-xs text-gray-400">
-                            <Calendar className="w-4 h-4 text-accent shrink-0" />
-                            <span>{new Date(event.date).toLocaleDateString('en-US', {
+                            <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-accent shrink-0" />
+                            <span className="text-xs">{new Date(event.date).toLocaleDateString('en-US', {
                               month: 'short',
                               day: 'numeric',
                               weekday: 'short'
@@ -403,23 +403,23 @@ export default function EventCalendarPage() {
                           </div>
                           
                           <div className="flex items-center gap-2 text-xs text-gray-400">
-                            <MapPin className="w-4 h-4 text-accent shrink-0" />
-                            <span className="line-clamp-2">{event.location_name}</span>
+                            <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-accent shrink-0" />
+                            <span className="line-clamp-2 text-xs">{event.location_name}</span>
                           </div>
 
                           {event.description && (
-                            <p className="text-xs text-gray-500 line-clamp-2 mt-2">{event.description}</p>
+                            <p className="text-xs text-gray-500 line-clamp-2 mt-1">{event.description}</p>
                           )}
                         </div>
 
                         {isRegistered(event.id) ? (
-                          <div className="w-full bg-green-500/20 border border-green-500 text-green-400 text-xs font-semibold py-2 px-4 rounded-md flex items-center justify-center gap-2">
-                            <CheckCircle className="w-4 h-4" />
-                            Registered
+                          <div className="w-full bg-green-500/20 border border-green-500 text-green-400 text-xs font-semibold py-2 px-3 rounded-md flex items-center justify-center gap-2">
+                            <CheckCircle className="w-3 h-3" />
+                            <span className="text-xs">Registered</span>
                           </div>
                         ) : (
                           <Link href={`/join-run?event=${event.id}`} className="block">
-                            <Button className="w-full bg-accent hover:bg-accent/90 text-background text-xs font-semibold group-hover:shadow-lg group-hover:shadow-accent/50 transition-all">
+                            <Button className="w-full bg-accent hover:bg-accent/90 text-background text-xs font-semibold group-hover:shadow-lg group-hover:shadow-accent/50 transition-all py-2">
                               Register Now
                             </Button>
                           </Link>
@@ -428,28 +428,28 @@ export default function EventCalendarPage() {
                         {/* Copy Location Button */}
                         <Button
                           variant="outline"
-                          className="w-full mt-2 text-xs border-gray-600 hover:border-accent hover:bg-accent/10"
+                          className="w-full mt-2 text-xs border-gray-600 hover:border-accent hover:bg-accent/10 py-2"
                           onClick={() => copyEventLocation(event)}
                         >
                           {copiedEventId === event.id ? (
                             <>
                               <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
-                              <span className="text-green-400">Copied!</span>
+                              <span className="text-green-400 text-xs">Copied!</span>
                             </>
                           ) : (
                             <>
                               <Copy className="w-3 h-3 mr-1" />
-                              Copy Location
+                              <span className="text-xs">Copy Location</span>
                             </>
                           )}
                         </Button>
 
                         {/* Show route + ride options if end location is set AND user is registered */}
                         {hasValidEndLocation(event) && isRegistered(event.id) && (
-                          <div className="mt-2 grid grid-cols-3 gap-2">
+                          <div className="mt-2 grid grid-cols-3 gap-1 sm:gap-2">
                             <Button 
                               variant="outline" 
-                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1"
+                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1 py-2" 
                               onClick={() => {
                                 setSelectedEventForRoute(event);
                                 setRouteViewerOpen(true);
@@ -457,45 +457,41 @@ export default function EventCalendarPage() {
                               title="View route on map"
                             >
                               <Navigation2 className="w-3 h-3" />
-                              Route
+                              <span className="hidden sm:inline">Route</span>
                             </Button>
                             <Button 
                               variant="outline" 
-                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1"
+                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1 py-2"
                               onClick={() => openUber(event)}
                             >
-                              <Image src="/uber.jpg" alt="Uber" width={32} height={16} className="h-4 w-auto object-contain" />
-                              Uber
+                              <Image src="/uber.jpg" alt="Uber" width={32} height={16} className="h-3 sm:h-4 w-auto object-contain" />
                             </Button>
                             <Button 
                               variant="outline" 
-                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1"
+                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1 py-2"
                               onClick={() => openYango(event)}
                             >
-                              <Image src="/yango.png" alt="Yango" width={32} height={16} className="h-4 w-auto object-contain" />
-                              Yango
+                              <Image src="/yango.png" alt="Yango" width={32} height={16} className="h-3 sm:h-4 w-auto object-contain" />
                             </Button>
                           </div>
                         )}
 
                         {/* Show only ride options if end location not set but start location is valid AND user is registered */}
                         {!hasValidEndLocation(event) && hasValidCoords(event.latitude, event.longitude) && isRegistered(event.id) && (
-                          <div className="mt-2 grid grid-cols-2 gap-2">
+                          <div className="mt-2 grid grid-cols-2 gap-1 sm:gap-2">
                             <Button 
                               variant="outline" 
-                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1"
+                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1 py-2"
                               onClick={() => openUber(event)}
                             >
-                              <Image src="/uber.jpg" alt="Uber" width={32} height={16} className="h-4 w-auto object-contain" />
-                              Uber
+                              <Image src="/uber.jpg" alt="Uber" width={32} height={16} className="h-3 sm:h-4 w-auto object-contain" />
                             </Button>
                             <Button 
                               variant="outline" 
-                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1"
+                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1 py-2"
                               onClick={() => openYango(event)}
                             >
-                              <Image src="/yango.png" alt="Yango" width={32} height={16} className="h-4 w-auto object-contain" />
-                              Yango
+                              <Image src="/yango.png" alt="Yango" width={32} height={16} className="h-3 sm:h-4 w-auto object-contain" />
                             </Button>
                           </div>
                         )}

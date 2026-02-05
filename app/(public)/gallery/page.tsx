@@ -72,15 +72,15 @@ export default function GalleryPage() {
     <>
       <Navigation />
       <main className="min-h-screen bg-black pt-20 py-12">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="space-y-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
+          <div className="space-y-6 sm:space-y-8">
             {/* Header */}
-            <div className="text-center py-12">
+            <div className="text-center py-8 sm:py-12">
               <div className="flex justify-center mb-6">
-                <img src="/icon.svg" alt="Logo" className="h-16 w-16" />
+                <img src="/icon.svg" alt="Logo" className="h-12 w-12 sm:h-16 sm:w-16" />
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">Gallery</h1>
-              <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-white">Gallery</h1>
+              <p className="text-sm sm:text-lg text-gray-400 max-w-2xl mx-auto">
                 Memories from our runs and events. Relive the moments!
               </p>
             </div>

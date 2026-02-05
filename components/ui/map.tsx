@@ -59,7 +59,8 @@ export function Map({
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
-      style: "https://demotiles.maplibre.org/style.json",
+      // Using CARTO Voyager style - free, detailed road map perfect for routes
+      style: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
       center: center as [number, number],
       zoom: zoom,
       minZoom: minZoom,
@@ -73,7 +74,16 @@ export function Map({
     });
 
     return () => {
-      map.current?.remove();
+      try {
+        if (map.current) {
+          map.current.remove();
+          map.current = null;
+        }
+      } catch (error) {
+        // Map removal might fail, ensure null reference
+        map.current = null;
+        console.debug("Error removing map:", error);
+      }
     };
   }, []);
 
@@ -185,52 +195,68 @@ export function MapRoute({
     const routeId = routeIdRef.current;
     const sourceId = `${routeId}-source`;
 
-    // Add source
-    if (!map.getSource(sourceId)) {
-      map.addSource(sourceId, {
-        type: "geojson",
-        data: {
-          type: "Feature",
-          properties: {},
-          geometry: {
-            type: "LineString",
-            coordinates: coordinates,
+    try {
+      // Add source
+      if (!map.getSource(sourceId)) {
+        map.addSource(sourceId, {
+          type: "geojson",
+          data: {
+            type: "Feature",
+            properties: {},
+            geometry: {
+              type: "LineString",
+              coordinates: coordinates,
+            },
           },
-        },
-      });
-    }
-
-    // Add layer
-    if (!map.getLayer(routeId)) {
-      map.addLayer({
-        id: routeId,
-        type: "line",
-        source: sourceId,
-        paint: {
-          "line-color": color,
-          "line-width": width,
-          "line-opacity": opacity,
-        },
-      });
-
-      if (onClick) {
-        map.on("click", routeId, onClick);
-        map.getCanvas().style.cursor = "pointer";
+        });
       }
-    } else {
-      // Update existing layer
-      map.setPaintProperty(routeId, "line-color", color);
-      map.setPaintProperty(routeId, "line-width", width);
-      map.setPaintProperty(routeId, "line-opacity", opacity);
+
+      // Add layer
+      if (!map.getLayer(routeId)) {
+        map.addLayer({
+          id: routeId,
+          type: "line",
+          source: sourceId,
+          paint: {
+            "line-color": color,
+            "line-width": width,
+            "line-opacity": opacity,
+          },
+        });
+
+        if (onClick) {
+          map.on("click", routeId, onClick);
+          try {
+            map.getCanvas().style.cursor = "pointer";
+          } catch (e) {
+            // Canvas might not be available, ignore
+          }
+        }
+      } else {
+        // Update existing layer
+        map.setPaintProperty(routeId, "line-color", color);
+        map.setPaintProperty(routeId, "line-width", width);
+        map.setPaintProperty(routeId, "line-opacity", opacity);
+      }
+    } catch (error) {
+      // Map might be unmounting or not ready, silently fail
+      console.debug("Error setting up route:", error);
     }
 
     return () => {
-      // Check map exists before removing layers
-      if (map && map.getLayer(routeId)) {
-        map.removeLayer(routeId);
-      }
-      if (map && map.getSource(sourceId)) {
-        map.removeSource(sourceId);
+      try {
+        // Verify map still exists and has the layer before trying to remove
+        if (map && typeof map.getLayer === "function") {
+          if (map.getLayer(routeId)) {
+            map.removeLayer(routeId);
+          }
+          if (map.getSource(sourceId)) {
+            map.removeSource(sourceId);
+          }
+        }
+      } catch (error) {
+        // Map is being destroyed, cleanup failed gracefully
+        console.debug("Error removing route during cleanup:", error);
       }
     };
   }, [map, isLoaded, coordinates, color, width, opacity, onClick]);

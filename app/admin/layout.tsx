@@ -14,11 +14,22 @@ export default function AdminLayout({
 }) {
   const { user, loading, isAdmin } = useAuth()
   const router = useRouter()
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     setMounted(true)
+    // Check if mobile
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+      if (window.innerWidth < 768) {
+        setSidebarOpen(false)
+      }
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
   useEffect(() => {
@@ -49,13 +60,21 @@ export default function AdminLayout({
 
   return (
     <div className="flex h-screen bg-background">
+      {/* Overlay for mobile */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <div
         className={`${
-          sidebarOpen ? 'w-64' : 'w-20'
-        } bg-card border-r border-border transition-all duration-300 flex flex-col`}
+          sidebarOpen ? 'w-64' : 'w-0 md:w-20'
+        } bg-card border-r border-border transition-all duration-300 flex flex-col fixed md:relative h-full md:h-auto z-50 md:z-auto overflow-y-auto`}
       >
-        <div className="p-4 border-b border-border flex items-center justify-between gap-3">
+        <div className="p-4 border-b border-border flex items-center justify-between gap-3 shrink-0">
           {sidebarOpen && (
             <Link href="/admin" className="flex items-center gap-2 flex-1 min-w-0">
               <Image
@@ -67,7 +86,7 @@ export default function AdminLayout({
               <span className="font-bold truncate">WalkEnd</span>
             </Link>
           )}
-          {!sidebarOpen && (
+          {!sidebarOpen && !isMobile && (
             <Link href="/admin">
               <Image
                 src="/icon.svg"
@@ -79,7 +98,7 @@ export default function AdminLayout({
           )}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1 hover:bg-background rounded shrink-0"
+            className="p-1 hover:bg-background rounded shrink-0 md:hidden"
           >
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -92,6 +111,7 @@ export default function AdminLayout({
               <Link
                 key={link.href}
                 href={link.href}
+                onClick={() => isMobile && setSidebarOpen(false)}
                 className="flex items-center gap-3 p-3 rounded hover:bg-background transition-colors text-sm"
                 title={link.label}
               >
@@ -102,19 +122,27 @@ export default function AdminLayout({
           })}
         </nav>
 
-        <div className="p-4 border-t border-border text-xs text-muted-foreground">
+        <div className="p-4 border-t border-border text-xs text-muted-foreground shrink-0">
           {sidebarOpen && <p>Logged in as Admin</p>}
         </div>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-card border-b border-border px-4 sm:px-6 py-3 sm:py-4">
-          <h1 className="text-xl sm:text-2xl font-bold">Admin Dashboard</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">Manage WalkEnd WeekEnd content</p>
+        <header className="bg-card border-b border-border px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-4">
+          <button 
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="md:hidden p-1 hover:bg-background rounded"
+          >
+            <Menu size={24} />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold truncate">Admin Dashboard</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">Manage WalkEnd WeekEnd content</p>
+          </div>
         </header>
 
-        <main className={`flex-1 overflow-auto p-4 sm:p-6 transition-all duration-300 `}>
+        <main className={`flex-1 overflow-auto p-4 sm:p-6 transition-all duration-300`}>
           {children}
         </main>
       </div>

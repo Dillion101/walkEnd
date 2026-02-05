@@ -65,32 +65,56 @@ function MapController({ selectedIndex }: { selectedIndex: number }) {
     if (!map || !isLoaded) return;
 
     const handleMove = () => {
-      setPitch(Math.round(map.getPitch()));
-      setBearing(Math.round(map.getBearing()));
+      try {
+        setPitch(Math.round(map.getPitch()));
+        setBearing(Math.round(map.getBearing()));
+      } catch (error) {
+        // Map might be being destroyed
+        console.debug("Error reading map state:", error);
+      }
     };
 
     map.on("move", handleMove);
     return () => {
-      map.off("move", handleMove);
+      try {
+        if (map && typeof map.off === "function") {
+          map.off("move", handleMove);
+        }
+      } catch (error) {
+        // Map might be destroyed, silently fail
+        console.debug("Error removing map listener:", error);
+      }
     };
   }, [map, isLoaded]);
 
   const handle3DView = () => {
-    map?.easeTo({
-      pitch: 60,
-      bearing: -20,
-      duration: 1000,
-    });
+    try {
+      if (map && typeof map.easeTo === "function") {
+        map.easeTo({
+          pitch: 60,
+          bearing: -20,
+          duration: 1000,
+        });
+      }
+    } catch (error) {
+      console.debug("Error setting 3D view:", error);
+    }
   };
 
   const handleReset = () => {
-    map?.easeTo({
-      pitch: 0,
-      bearing: 0,
-      center: map.getCenter(),
-      zoom: map.getZoom(),
-      duration: 1000,
-    });
+    try {
+      if (map && typeof map.easeTo === "function") {
+        map.easeTo({
+          pitch: 0,
+          bearing: 0,
+          center: map.getCenter(),
+          zoom: map.getZoom(),
+          duration: 1000,
+        });
+      }
+    } catch (error) {
+      console.debug("Error resetting view:", error);
+    }
   };
 
   if (!isLoaded) return null;
@@ -135,7 +159,7 @@ function RouteDisplay({
   const [error, setError] = useState<string | null>(null);
 
   const defaultStart = startLocation || {
-    name: "Start Point",
+    name: event.location_name,
     lng: event.longitude,
     lat: event.latitude,
   };
@@ -151,42 +175,76 @@ function RouteDisplay({
       try {
         setIsLoading(true);
         setError(null);
-        const response = await fetch(
-          `https://router.project-osrm.org/route/v1/driving/${defaultStart.lng},${defaultStart.lat};${end.lng},${end.lat}?overview=full&geometries=geojson&alternatives=true`
-        );
 
-        if (!response.ok) throw new Error("Failed to fetch routes");
+        const apiKey = process.env.NEXT_PUBLIC_OPENROUTESERVICE_API_KEY;
+        if (!apiKey) {
+          throw new Error("OpenRouteService API key not configured");
+        }
+
+        // Use OpenRouteService for walking routes with accurate time estimates
+        const url = `https://api.openrouteservice.org/v2/directions/foot-walking?api_key=${apiKey}&start=${defaultStart.lng},${defaultStart.lat}&end=${end.lng},${end.lat}`;
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+        const response = await fetch(url, { 
+          signal: controller.signal,
+          headers: {
+            'Accept': 'application/json, application/geo+json'
+          }
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error?.message || `API error: ${response.status}`);
+        }
 
         const data = await response.json();
 
-        if (data.routes?.length > 0) {
-          const routeData: RouteData[] = data.routes.map(
-            (route: {
+        if (data.features && data.features.length > 0) {
+          const routeData: RouteData[] = data.features.map(
+            (feature: {
               geometry: { coordinates: [number, number][] };
-              duration: number;
-              distance: number;
+              properties: { summary: { duration: number; distance: number } };
             }) => ({
-              coordinates: route.geometry.coordinates,
-              duration: route.duration,
-              distance: route.distance,
+              coordinates: feature.geometry.coordinates,
+              duration: feature.properties.summary.duration,
+              distance: feature.properties.summary.distance,
             })
           );
           setRoutes(routeData);
         } else {
-          setError("No routes found");
+          setError("No walking route found between these locations");
         }
       } catch (err) {
-        console.error("Failed to fetch routes:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to load routes"
-        );
+        if (err instanceof Error && err.name === "AbortError") {
+          console.error("Route request timeout");
+          setError("Request timeout. Please try again.");
+        } else {
+          console.error("Failed to fetch routes:", err);
+          setError(
+            err instanceof Error ? err.message : "Failed to load routes"
+          );
+        }
       } finally {
         setIsLoading(false);
       }
     }
 
     fetchRoutes();
-  }, [event, defaultStart, end]);
+  }, [
+    event.longitude,
+    event.latitude,
+    event.end_longitude,
+    event.end_latitude,
+    startLocation?.lng,
+    startLocation?.lat,
+    defaultStart.lng,
+    defaultStart.lat,
+    end.lng,
+    end.lat
+  ]);
 
   // Sort routes: non-selected first, selected last (renders on top)
   const sortedRoutes = routes
@@ -300,53 +358,53 @@ function RouteDisplay({
 
       {/* Event info card */}
       {routes.length > 0 && (
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="mt-6 bg-card text-card-foreground rounded-xl border p-6 shadow-sm">
+          <div className="grid grid-cols-2 gap-6">
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase">
-                Route Details
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Distance
               </p>
-              <p className="text-sm font-semibold text-gray-900 mt-1">
+              <p className="text-2xl font-bold mt-2">
                 {routes[selectedIndex].distance > 1000
                   ? `${(routes[selectedIndex].distance / 1000).toFixed(1)} km`
                   : `${Math.round(routes[selectedIndex].distance)} m`}
               </p>
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Estimated Time
               </p>
-              <p className="text-sm font-semibold text-gray-900 mt-1">
+              <p className="text-2xl font-bold mt-2">
                 {formatDuration(routes[selectedIndex].duration)}
               </p>
             </div>
           </div>
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <p className="text-xs font-medium text-gray-500 uppercase mb-3">
-              Run Details
-            </p>
-            <div className="space-y-2">
-              <div>
-                <p className="text-xs text-gray-500">Start</p>
-                <p className="font-semibold text-gray-900">{defaultStart.name}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">End</p>
-                <p className="font-semibold text-gray-900">{end.name}</p>
-              </div>
-              <div className="pt-2 border-t border-gray-200">
-                <p className="text-xs font-medium text-gray-500 uppercase mb-1">Event</p>
-                <p className="font-semibold text-gray-900">{event.title}</p>
-                <p className="text-sm text-gray-600 mt-1 flex items-center gap-2">
-                  📅{" "}
-                  {new Date(event.date).toLocaleDateString("en-US", {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </p>
-              </div>
+          <div className="mt-6 pt-6 border-t border-border space-y-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Start
+              </p>
+              <p className="text-base font-medium mt-1">{defaultStart.name}</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                End
+              </p>
+              <p className="text-base font-medium mt-1">{end.name}</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Event
+              </p>
+              <p className="text-base font-medium mt-1">{event.title}</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                {new Date(event.date).toLocaleDateString("en-US", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </p>
             </div>
           </div>
         </div>

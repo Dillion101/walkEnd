@@ -82,15 +82,15 @@ export default function BlogPage() {
     <>
       <Navigation />
       <main className="min-h-screen bg-black pt-20 py-12">
-      <div className="container mx-auto px-4">
-        <div className="max-w-5xl mx-auto">
-          {/* Header */}
-          <div className="mb-12">
-            <div className="flex items-center gap-3 mb-4">
-              <img src="/icon.svg" alt="WalkEnd WeekEnd" className="w-8 h-8" />
-              <h1 className="text-4xl font-bold text-white mb-0">Running Blog</h1>
-            </div>
-            <p className="text-gray-400 mb-6">Tips, stories, and inspiration from our running community</p>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-5xl mx-auto">
+            {/* Header */}
+            <div className="mb-8 sm:mb-12">
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <img src="/icon.svg" alt="WalkEnd WeekEnd" className="w-8 h-8" />
+                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-0">Running Blog</h1>
+              </div>
+              <p className="text-gray-400 text-sm sm:text-base mb-6">Tips, stories, and inspiration from our running community</p>
 
             {/* Search */}
             <div className="relative">
@@ -113,14 +113,14 @@ export default function BlogPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-8">
+            <div className="space-y-6 sm:space-y-8">
               {filteredPosts.map((post) => (
                 <Link key={post.id} href={`/blog/${post.slug}`}>
                   <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
-                    <div className="grid md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-0 sm:gap-4">
                       {/* Featured Image */}
                       {post.featured_image && (
-                        <div className="md:col-span-1 relative h-48 md:h-auto">
+                        <div className="relative h-48 md:h-auto md:col-span-1">
                           <Image
                             src={post.featured_image}
                             alt={post.title}
@@ -131,12 +131,12 @@ export default function BlogPage() {
                       )}
 
                       {/* Content */}
-                      <div className={`p-6 flex flex-col justify-between ${post.featured_image ? 'md:col-span-2' : 'md:col-span-3'}`}>
+                      <div className={`p-4 sm:p-6 flex flex-col justify-between ${post.featured_image ? 'md:col-span-2' : 'md:col-span-3'}`}>
                         <div>
-                          <h3 className="text-2xl font-bold text-gray-900 mb-2 line-clamp-2">
+                          <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 line-clamp-2">
                             {post.title}
                           </h3>
-                          <p className="text-gray-600 mb-4 line-clamp-3">
+                          <p className="text-sm sm:text-base text-gray-600 mb-4 line-clamp-3">
                             {post.excerpt}
                           </p>
                         </div>
