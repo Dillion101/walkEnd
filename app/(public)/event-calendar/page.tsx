@@ -9,7 +9,8 @@ import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Image from 'next/image';
-import { Calendar, MapPin, ChevronLeft, ChevronRight, Copy, CheckCircle, Check } from 'lucide-react';
+import { Calendar, MapPin, ChevronLeft, ChevronRight, Copy, CheckCircle, Check, Navigation2 } from 'lucide-react';
+import { EventRouteViewer } from '@/components/event-route-viewer';
 
 interface Event {
   id: string;
@@ -19,6 +20,9 @@ interface Event {
   location_name: string;
   latitude: number;
   longitude: number;
+  end_location_name?: string;
+  end_latitude?: number;
+  end_longitude?: number;
   image_url: string;
 }
 
@@ -42,6 +46,8 @@ export default function EventCalendarPage() {
   const [copiedEventId, setCopiedEventId] = useState<string | null>(null);
   const [registeredEventIds, setRegisteredEventIds] = useState<Set<string>>(new Set());
   const [isMobile, setIsMobile] = useState(false);
+  const [routeViewerOpen, setRouteViewerOpen] = useState(false);
+  const [selectedEventForRoute, setSelectedEventForRoute] = useState<Event | null>(null);
 
   // Check if user is registered for an event
   const isRegistered = (eventId: string) => registeredEventIds.has(eventId);
@@ -55,6 +61,13 @@ export default function EventCalendarPage() {
   // Copy: coordinates first if admin added them (and not 0,0), else location name
   const hasValidCoords = (lat: number, lng: number) =>
     lat != null && lng != null && !(lat === 0 && lng === 0);
+
+  // Check if event has valid end location for route viewing
+  const hasValidEndLocation = (event: Event) =>
+    event.end_location_name &&
+    event.end_latitude != null &&
+    event.end_longitude != null &&
+    !(event.end_latitude === 0 && event.end_longitude === 0);
 
   const copyEventLocation = (event: Event) => {
     const locationText = hasValidCoords(event.latitude, event.longitude)
@@ -431,7 +444,42 @@ export default function EventCalendarPage() {
                           )}
                         </Button>
 
-                        {hasValidCoords(event.latitude, event.longitude) && (
+                        {/* Show route + ride options if end location is set AND user is registered */}
+                        {hasValidEndLocation(event) && isRegistered(event.id) && (
+                          <div className="mt-2 grid grid-cols-3 gap-2">
+                            <Button 
+                              variant="outline" 
+                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1"
+                              onClick={() => {
+                                setSelectedEventForRoute(event);
+                                setRouteViewerOpen(true);
+                              }}
+                              title="View route on map"
+                            >
+                              <Navigation2 className="w-3 h-3" />
+                              Route
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1"
+                              onClick={() => openUber(event)}
+                            >
+                              <Image src="/uber.jpg" alt="Uber" width={32} height={16} className="h-4 w-auto object-contain" />
+                              Uber
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1"
+                              onClick={() => openYango(event)}
+                            >
+                              <Image src="/yango.png" alt="Yango" width={32} height={16} className="h-4 w-auto object-contain" />
+                              Yango
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* Show only ride options if end location not set but start location is valid AND user is registered */}
+                        {!hasValidEndLocation(event) && hasValidCoords(event.latitude, event.longitude) && isRegistered(event.id) && (
                           <div className="mt-2 grid grid-cols-2 gap-2">
                             <Button 
                               variant="outline" 
@@ -458,6 +506,17 @@ export default function EventCalendarPage() {
               </Card>
             </div>
           </div>
+
+          {selectedEventForRoute && (
+            <EventRouteViewer 
+              event={selectedEventForRoute}
+              isOpen={routeViewerOpen}
+              onClose={() => {
+                setRouteViewerOpen(false);
+                setSelectedEventForRoute(null);
+              }}
+            />
+          )}
         </div>
       </main>
       <Footer />

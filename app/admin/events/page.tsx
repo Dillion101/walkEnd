@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Trash2, Edit2, Plus, AlertCircle, Users, Download, X } from 'lucide-react'
 import { uploadToCloudinary, deleteImageFromCloudinary } from '@/lib/cloudinary'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AdminEventRouteButton } from '@/components/admin-event-route-button'
 
 interface Event {
   id: string
@@ -21,6 +22,9 @@ interface Event {
   location_name: string
   latitude: number | null
   longitude: number | null
+  end_location_name?: string | null
+  end_latitude?: number | null
+  end_longitude?: number | null
   image_url: string
   created_at: string
 }
@@ -62,6 +66,9 @@ export default function EventsPage() {
     location_name: '',
     latitude: null as number | null,
     longitude: null as number | null,
+    end_location_name: '' as string | null,
+    end_latitude: null as number | null,
+    end_longitude: null as number | null,
     image_url: '',
   })
 
@@ -185,6 +192,9 @@ export default function EventsPage() {
             location_name: formData.location_name,
             latitude: formData.latitude,
             longitude: formData.longitude,
+            end_location_name: formData.end_location_name || null,
+            end_latitude: formData.end_latitude,
+            end_longitude: formData.end_longitude,
             image_url: imageUrl,
           })
           .eq('id', editingId)
@@ -271,6 +281,9 @@ export default function EventsPage() {
       location_name: '',
       latitude: null,
       longitude: null,
+      end_location_name: '' as string | null,
+      end_latitude: null,
+      end_longitude: null,
       image_url: '',
     })
     setImageFile(null)
@@ -286,6 +299,9 @@ export default function EventsPage() {
       location_name: event.location_name,
       latitude: event.latitude,
       longitude: event.longitude,
+      end_location_name: event.end_location_name || '',
+      end_latitude: event.end_latitude || null,
+      end_longitude: event.end_longitude || null,
       image_url: event.image_url,
     })
     setImagePreview(event.image_url)
@@ -408,6 +424,45 @@ export default function EventsPage() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium mb-1">End Location Name</label>
+                <Input
+                  value={formData.end_location_name || ''}
+                  onChange={(e) => setFormData({ ...formData, end_location_name: e.target.value })}
+                  placeholder="Where the run ends (e.g., Jubilee Park)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">End Location Coordinates</label>
+                <p className="text-xs text-gray-600 mb-3">
+                  Set this to enable route viewing for users. Use <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:underline">Google Maps</a> to find coordinates.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">End Latitude</label>
+                    <Input
+                      type="number"
+                      step="0.00001"
+                      value={formData.end_latitude || ''}
+                      onChange={(e) => setFormData({ ...formData, end_latitude: e.target.value ? parseFloat(e.target.value) : null })}
+                      placeholder="e.g., 5.6037 (optional)"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">End Longitude</label>
+                    <Input
+                      type="number"
+                      step="0.00001"
+                      value={formData.end_longitude || ''}
+                      onChange={(e) => setFormData({ ...formData, end_longitude: e.target.value ? parseFloat(e.target.value) : null })}
+                      placeholder="e.g., -0.1870 (optional)"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium mb-1">Event Image</label>
                 <Input
                   type="file"
@@ -481,6 +536,7 @@ export default function EventsPage() {
                       <span className="hidden sm:inline">Registrations</span>
                     </Button>
                     <div className="flex gap-2">
+                      <AdminEventRouteButton event={event} />
                       <Button
                         variant="outline"
                         size="sm"
