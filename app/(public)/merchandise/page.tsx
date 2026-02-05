@@ -115,7 +115,7 @@ Please confirm availability and delivery options.`
                     <h3 className="text-lg font-bold font-display text-white mb-2">{item.name}</h3>
                     <p className="text-gray-400 text-sm mb-4 flex-1">{item.description}</p>
                     <div className="flex items-baseline gap-2 mb-4">
-                      <span className="text-2xl font-bold text-accent">${typeof item.price === 'number' ? item.price.toFixed(2) : item.price}</span>
+                      <span className="text-2xl font-bold text-accent">₵{typeof item.price === 'number' ? item.price.toFixed(2) : item.price}</span>
                     </div>
 
                     {/* WhatsApp Button */}

@@ -96,7 +96,7 @@ export default function Merchandise() {
                   <h3 className="text-lg font-bold font-display text-white mb-2">{product.name}</h3>
                   <p className="text-gray-400 text-sm mb-4 flex-1">{product.description}</p>
                   <div className="flex items-baseline gap-2 mb-4">
-                    <span className="text-2xl font-bold text-accent">${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}</span>
+                    <span className="text-2xl font-bold text-accent">₵{typeof product.price === 'number' ? product.price.toFixed(2) : product.price}</span>
                   </div>
 
                   {/* WhatsApp Button */}

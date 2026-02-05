@@ -359,7 +359,7 @@ export default function MerchandisePage() {
                 )}
                 <h3 className="font-bold">{item.name}</h3>
                 <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
-                <p className="text-lg font-bold text-orange-500 mb-3">${item.price.toFixed(2)}</p>
+                <p className="text-lg font-bold text-orange-500 mb-3">₵{item.price.toFixed(2)}</p>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
