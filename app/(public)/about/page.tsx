@@ -37,8 +37,14 @@ export default function AboutPage() {
                 Whether you're a seasoned marathon runner or just starting out, there's a place for you in our runs.
               </p>
             </div>
-            <div className="bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg h-64 flex items-center justify-center">
-              <span className="text-white text-4xl">🏃</span>
+            <div className="bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg h-64 overflow-hidden flex items-center justify-center">
+              <Image
+                src="https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=500&h=400&fit=crop"
+                alt="Running together"
+                width={500}
+                height={400}
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
         </div>
@@ -48,31 +54,61 @@ export default function AboutPage() {
       <section className="max-w-4xl mx-auto px-4">
         <h2 className="text-2xl sm:text-3xl font-bold mb-8 sm:mb-12 text-center text-white">Our Values</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
-          <Card className="bg-gray-900 border-gray-800">
-            <CardContent className="pt-6 text-center">
-              <div className="text-4xl mb-4">🤝</div>
-              <h3 className="text-xl font-bold mb-2 text-white">Community</h3>
-              <p className="text-gray-400">
-                We support each other, celebrate victories, and help through challenges together.
-              </p>
+          <Card className="bg-gray-900 border-gray-800 overflow-hidden">
+            <CardContent className="pt-0">
+              <div className="w-full h-48 bg-gray-800 overflow-hidden">
+                <Image
+                  src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=300&h=300&fit=crop"
+                  alt="Community"
+                  width={300}
+                  height={300}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="p-6 text-center">
+                <h3 className="text-xl font-bold mb-2 text-white">Community</h3>
+                <p className="text-gray-400">
+                  We support each other, celebrate victories, and help through challenges together.
+                </p>
+              </div>
             </CardContent>
           </Card>
-          <Card className="bg-gray-900 border-gray-800">
-            <CardContent className="pt-6 text-center">
-              <div className="text-4xl mb-4">💪</div>
-              <h3 className="text-xl font-bold mb-2 text-white">Growth</h3>
-              <p className="text-gray-400">
-                Every run is an opportunity to improve, learn, and push your personal limits.
-              </p>
+          <Card className="bg-gray-900 border-gray-800 overflow-hidden">
+            <CardContent className="pt-0">
+              <div className="w-full h-48 bg-gray-800 overflow-hidden">
+                <Image
+                  src="https://images.unsplash.com/photo-1517836357463-d25ddfcbf042?w=300&h=300&fit=crop"
+                  alt="Growth"
+                  width={300}
+                  height={300}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="p-6 text-center">
+                <h3 className="text-xl font-bold mb-2 text-white">Growth</h3>
+                <p className="text-gray-400">
+                  Every run is an opportunity to improve, learn, and push your personal limits.
+                </p>
+              </div>
             </CardContent>
           </Card>
-          <Card className="bg-gray-900 border-gray-800">
-            <CardContent className="pt-6 text-center">
-              <div className="text-4xl mb-4">😊</div>
-              <h3 className="text-xl font-bold mb-2 text-white">Inclusivity</h3>
-              <p className="text-gray-400">
-                All paces, all levels, all backgrounds welcome. Running is for everyone.
-              </p>
+          <Card className="bg-gray-900 border-gray-800 overflow-hidden">
+            <CardContent className="pt-0">
+              <div className="w-full h-48 bg-gray-800 overflow-hidden">
+                <Image
+                  src="https://images.unsplash.com/photo-1491899185352-69a08b64b225?w=300&h=300&fit=crop"
+                  alt="Inclusivity"
+                  width={300}
+                  height={300}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="p-6 text-center">
+                <h3 className="text-xl font-bold mb-2 text-white">Inclusivity</h3>
+                <p className="text-gray-400">
+                  All paces, all levels, all backgrounds welcome. Running is for everyone.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -83,16 +119,28 @@ export default function AboutPage() {
         <div className="max-w-4xl mx-auto px-4">
           <h2 className="text-2xl sm:text-3xl font-bold mb-8 sm:mb-12 text-center text-white">Meet the Team</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-            {[1, 2].map((i) => (
-              <Card key={i} className="bg-gray-800 border-gray-700">
-                <CardContent className="pt-6">
-                  <div className="bg-gradient-to-br from-gray-700 to-gray-600 rounded-lg h-40 mb-4 flex items-center justify-center">
-                    <span className="text-2xl">👤</span>
+            {[
+              { name: 'Coach Sarah', role: 'Founder & Lead Coach', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=400&fit=crop' },
+              { name: 'Alex Johnson', role: 'Community Manager', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop' }
+            ].map((member) => (
+              <Card key={member.name} className="bg-gray-800 border-gray-700 overflow-hidden">
+                <CardContent className="pt-0">
+                  <div className="relative w-full h-64 bg-gray-700">
+                    <Image
+                      src={member.image}
+                      alt={member.name}
+                      width={300}
+                      height={400}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  <h3 className="text-xl font-bold text-white">Team Member {i}</h3>
-                  <p className="text-gray-400 mt-2">
-                    Passion for running and community building. Always ready for the next adventure.
-                  </p>
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold text-white">{member.name}</h3>
+                    <p className="text-orange-500 font-semibold mb-2">{member.role}</p>
+                    <p className="text-gray-400">
+                      Passionate about running and building a welcoming community. Always ready for the next adventure.
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             ))}

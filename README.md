@@ -78,10 +78,10 @@ WalkEnd Weekend is a comprehensive platform for the running community. It allows
 ### Installation Steps
 
 #### 1. Clone Repository
-\\\ash
+```bash
 git clone https://github.com/yourusername/walkend-weekend.git
 cd walkend-weekend
-\\\
+```
 
 #### 2. Install Dependencies
 \\\ash
@@ -118,7 +118,7 @@ UPDATE users SET role = 'admin' WHERE email = 'your-email@example.com';
 
 ### Create .env.local File
 
-\\\env
+```env
 # SUPABASE
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
@@ -132,10 +132,14 @@ CLOUDINARY_API_SECRET=your-api-secret
 # RESEND (EMAIL)
 RESEND_API_KEY=your-resend-api-key
 
+# THEME & COLORS
+NEXT_PUBLIC_PRIMARY_HUE=0
+NEXT_PUBLIC_SECONDARY_HUE=240
+
 # APPLICATION
 NEXT_PUBLIC_WHATSAPP_NUMBER=+233XXXXXXXXX
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-\\\
+```
 
 ### Get Supabase Credentials
 1. Go to supabase.com, create a project
@@ -158,7 +162,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 ## Database Setup
 
 ### Create Users Table
-\\\sql
+```sql
 CREATE TABLE public.users (
   id UUID NOT NULL PRIMARY KEY DEFAULT auth.uid(),
   email TEXT NOT NULL UNIQUE,
@@ -188,10 +192,10 @@ CREATE POLICY "Only admins can change roles"
 
 CREATE INDEX idx_users_email ON public.users(email);
 CREATE INDEX idx_users_role ON public.users(role);
-\\\
+```
 
 ### Create Events Table
-\\\sql
+```sql
 CREATE TABLE public.events (
   id UUID NOT NULL PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
   title TEXT NOT NULL,
@@ -229,10 +233,10 @@ CREATE POLICY "Event creators and admins can delete"
 
 CREATE INDEX idx_events_date ON public.events(date DESC);
 CREATE INDEX idx_events_created_by ON public.events(created_by);
-\\\
+```
 
 ### Create Merchandise Table
-\\\sql
+```sql
 CREATE TABLE public.merchandise (
   id UUID NOT NULL PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
   name TEXT NOT NULL,
@@ -266,10 +270,10 @@ CREATE POLICY "Admins can delete merchandise"
   USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 
 CREATE INDEX idx_merchandise_created_by ON public.merchandise(created_by);
-\\\
+```
 
 ### Create Gallery Images Table
-\\\sql
+```sql
 CREATE TABLE public.gallery_images (
   id UUID NOT NULL PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
   image_url TEXT NOT NULL,
@@ -296,10 +300,10 @@ CREATE POLICY "Admins can delete images"
   USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 
 CREATE INDEX idx_gallery_event_id ON public.gallery_images(event_id);
-\\\
+```
 
 ### Create Blog Posts Table
-\\\sql
+```sql
 CREATE TABLE public.blog_posts (
   id UUID NOT NULL PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
   title TEXT NOT NULL,
@@ -335,10 +339,10 @@ CREATE POLICY "Post authors and admins can update"
 
 CREATE INDEX idx_blog_slug ON public.blog_posts(slug);
 CREATE INDEX idx_blog_published ON public.blog_posts(published);
-\\\
+```
 
 ### Create FAQs Table
-\\\sql
+```sql
 CREATE TABLE public.faqs (
   id UUID NOT NULL PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
   question TEXT NOT NULL,
@@ -361,10 +365,10 @@ CREATE POLICY "Admins can manage FAQs"
   USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 
 CREATE INDEX idx_faqs_order ON public.faqs(order_index);
-\\\
+```
 
 ### Create Training Tips Table
-\\\sql
+```sql
 CREATE TABLE public.training_tips (
   id UUID NOT NULL PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
   title TEXT NOT NULL,
@@ -388,10 +392,10 @@ CREATE POLICY "Admins can manage training tips"
   USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 
 CREATE INDEX idx_training_category ON public.training_tips(category);
-\\\
+```
 
 ### Create Event Registrations Table
-\\\sql
+```sql
 CREATE TABLE public.event_registrations (
   id UUID NOT NULL PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
   event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
@@ -420,7 +424,7 @@ CREATE POLICY "Users can cancel their registration"
 
 CREATE INDEX idx_registration_event_id ON public.event_registrations(event_id);
 CREATE INDEX idx_registration_user_id ON public.event_registrations(user_id);
-\\\
+```
 
 ---
 
@@ -478,33 +482,64 @@ CREATE INDEX idx_registration_user_id ON public.event_registrations(user_id);
 
 ---
 
+### 4. Map Integration (OpenStreetMap & Leaflet)
+
+#### How It Works
+The application uses OpenStreetMap and Leaflet for interactive maps with:
+- Event location display with markers
+- Location-based search with Nominatim API
+- Customizable map colors using CSS
+
+#### Setup
+No additional credentials required! OpenStreetMap is free to use.
+
+#### Features
+- **Interactive Maps**: Display events on maps with zoom/pan controls
+- **Location Search**: Search for locations using Nominatim API
+- **Marker Clustering**: Group nearby events visually
+- **Mobile Responsive**: Maps work on all screen sizes
+
+#### Map Components
+- `components/ui/map.tsx` - Base map component
+- `app/admin/events/map-picker.tsx` - Event location picker for admins
+- Map integration in event detail pages
+
+#### Environment Configuration
+```env
+# Map colors are configured via HUE variables in CSS
+NEXT_PUBLIC_PRIMARY_HUE=0
+NEXT_PUBLIC_SECONDARY_HUE=240
+```
+
+---
+
 ## Features
 
-###  Implemented
-
+**Core Functionality**
 - User authentication (email/password + Google OAuth)
-- Event creation, viewing, registration
+- Event creation, management, and registration with location mapping
+- Interactive map picker with OpenStreetMap integration for event locations
 - Merchandise catalog and ordering via WhatsApp
-- Photo gallery with uploads
-- Blog posts with slug routing
-- Training tips and FAQs
-- Email notifications
-- Admin dashboard
+- Photo gallery with Cloudinary image uploads and management
+- Blog posts with automatic slug generation and routing
+- Training tips and FAQs management
+- Email notifications via Resend API
+- Admin dashboard for content management
+- Ride hailing integration (Uber & Yango APIs)
 - Mobile responsive design
-- Dark theme throughout
+- Dark theme support
 
-###  Partial/Issues
+**Security & Admin**
+- Role-based access control (Admin/User)
+- Row-level security policies in Supabase
+- Protected admin routes
+- User authentication with session management
 
-- Map picker search (see TODO.md)
-- Session persistence (see TODO.md)
-- Event editing
-- Event deletion
-
-###  Not Yet
-
+**Coming Soon**
+- Theme toggle (Light/Dark modes)
 - Payment integration
 - Advanced analytics
-- Live chat
+- Live chat support
 - Mobile app
 
 ---
@@ -545,11 +580,11 @@ CREATE INDEX idx_registration_user_id ON public.event_registrations(user_id);
 ## Deployment to Vercel
 
 ### 1. Push to GitHub
-\\\ash
+```bash
 git add .
 git commit -m "Deploy ready"
 git push origin main
-\\\
+```
 
 ### 2. Create Vercel Account
 Visit vercel.com, sign up with GitHub
@@ -585,10 +620,10 @@ Click Deploy. Takes 2-5 minutes.
 - No spaces in env values
 
 ### Build Fails with TypeScript Errors
-\\\ash
+```bash
 npm run build
 npx tsc --noEmit
-\\\
+```
 
 ### Images Not Uploading to Cloudinary
 - Verify CLOUDINARY_API_KEY and SECRET in .env.local
