@@ -1,4 +1,4 @@
-﻿#  WalkEnd Weekend - Community Running Platform
+#  WalkEnd Weekend - Community Running Platform
 
 > A modern web application designed for organizing running events, sharing merchandise, and building community among runners in Ghana.
 
@@ -10,113 +10,137 @@
 
 ---
 
-##  Table of Contents
+## Table of Contents
 
 - [Overview](#overview)
+- [Key Features](#key-features)
 - [Tech Stack](#tech-stack)
-- [Quick Start Guide](#quick-start-guide)
+- [Quick Start](#quick-start)
 - [Environment Setup](#environment-setup)
 - [Database Setup](#database-setup)
 - [External Services](#external-services)
-- [Features](#features)
 - [API Routes](#api-routes)
 - [Deployment](#deployment)
+- [Development](#development)
 - [Troubleshooting](#troubleshooting)
 - [Known Issues](#known-issues)
 
 ---
 
-## Overview
+##  Overview
 
 WalkEnd Weekend is a comprehensive platform for the running community. It allows organizers to create and manage running events, sell merchandise, share photos from past events, publish training tips and blog posts, and handle user registrations.
 
-### Key Capabilities
+---
 
--  **Event Management**: Create, organize, and manage running events with location mapping
--  **Merchandise Store**: Sell running gear with WhatsApp integration
--  **Gallery**: Upload and share event photos
--  **Blog & Tips**: Publish training content
--  **User Management**: Authentication and event registrations
--  **Email Notifications**: Automated alerts for events, blogs, and merchandise
--  **Mobile Responsive**: Works on all devices
--  **Dark Theme**: Modern dark interface
+##  Key Features
+
+### Core Functionality
+- **Event Management** - Create, organize, and manage running events with interactive location mapping
+- **Merchandise Store** - Sell running gear with WhatsApp integration for orders
+- **Photo Gallery** - Upload and share event photos with Cloudinary integration
+- **Blog & Training** - Publish training tips and blog posts with authentication
+- **User Management** - Email/password and Google OAuth authentication, event registrations
+- **Email Notifications** - Automated alerts for events, blogs, and merchandise
+- **Admin Dashboard** - Complete content management system for administrators
+- **Ride Hailing** - Integration with Uber and Yango APIs for transportation
+
+### Technical Features
+- **Mobile Responsive** - Works seamlessly on all devices
+- **Dark Theme** - Modern dark interface throughout
+- **Role-Based Access** - Admin and user roles with row-level security
+- **Location Mapping** - Interactive maps powered by OpenStreetMap and Leaflet
+- **Security** - Supabase authentication with RLS policies
 
 ---
 
-## Tech Stack
+##  Tech Stack
 
 ### Frontend
-| Technology | Version | Purpose |
-|-----------|---------|---------|
-| **Next.js** | 16.0.10 | React framework |
-| **React** | 19 | UI library |
-| **TypeScript** | 5.6 | Type safety |
-| **Tailwind CSS** | 4.0 | Styling |
-| **Shadcn/ui** | Latest | Components |
+
+| Technology      | Version | Purpose               |
+|-----------------|---------|----------------------|
+| **Next.js**     | 16.0.10 | React framework       |
+| **React**       | 19      | UI library            |
+| **TypeScript**  | 5.6     | Type safety           |
+| **Tailwind CSS**| 4.0     | Styling               |
+| **Shadcn/ui**   | Latest  | Component library     |
 
 ### Backend & Services
-| Service | Purpose | Cost |
-|---------|---------|------|
-| **Supabase** | PostgreSQL database, authentication | Free tier available |
-| **Cloudinary** | Image hosting | Free tier available |
-| **Resend** | Email service | 100 emails/day free |
-| **OpenStreetMap** | Location mapping | Free |
-| **Google OAuth** | Social authentication | Free |
+
+| Service         | Purpose                        | Cost                |
+|-----------------|--------------------------------|---------------------|
+| **Supabase**    | PostgreSQL database, Auth      | Free tier available |
+| **Cloudinary**  | Image hosting & management     | Free tier available |
+| **Resend**      | Email sending service          | 100 emails/day free |
+| **OpenStreetMap**| Location mapping & geocoding  | Free                |
+| **Google OAuth**| Social authentication          | Free                |
 
 ---
 
-## Quick Start Guide
+##  Quick Start
 
 ### Prerequisites
-- Node.js 18+ (recommend 20 LTS)
-- npm or pnpm
+
+- Node.js 18+ (recommended 20 LTS)
+- npm (we use npm for commands)
 - Git
-- Supabase account (https://supabase.com)
-- Cloudinary account (https://cloudinary.com)
-- Resend account (https://resend.com)
+- [Supabase account](https://supabase.com)
+- [Cloudinary account](https://cloudinary.com)
+- [Resend account](https://resend.com)
 
 ### Installation Steps
 
 #### 1. Clone Repository
+
 ```bash
 git clone https://github.com/yourusername/walkend-weekend.git
 cd walkend-weekend
 ```
 
 #### 2. Install Dependencies
-\\\ash
-pnpm install
-\\\
+
+```bash
+npm install
+```
 
 #### 3. Set Up Environment Variables
-\\\ash
+
+```bash
 cp .env.local.example .env.local
-\\\
+```
 
-#### 4. Create Database Tables
-Run SQL scripts from the Database Setup section below in Supabase SQL Editor.
+#### 4. Configure Environment
 
-#### 5. Configure Google OAuth
-Follow the steps in External Services section below.
+Edit `.env.local` with your credentials from Supabase, Cloudinary, and Resend.
+
+#### 5. Create Database Tables
+
+Run the SQL scripts from the [Database Setup](#database-setup) section in Supabase SQL Editor.
 
 #### 6. Start Development Server
-\\\ash
-pnpm dev
-\\\
 
-Visit http://localhost:3000
+```bash
+npm run dev
+```
+
+Visit [http://localhost:3000](http://localhost:3000)
 
 #### 7. Create Admin User
-Sign up at signup page, then run in Supabase SQL Editor:
-\\\sql
-UPDATE users SET role = 'admin' WHERE email = 'your-email@example.com';
-\\\
+
+Sign up from the signup page, then run this in Supabase SQL Editor:
+
+```sql
+UPDATE public.users SET role = 'admin' WHERE email = 'your-email@example.com';
+```
 
 ---
 
-## Environment Setup
+##  Environment Setup
 
 ### Create .env.local File
+
+Copy `.env.local.example` and fill in your credentials:
 
 ```env
 # SUPABASE
@@ -132,9 +156,8 @@ CLOUDINARY_API_SECRET=your-api-secret
 # RESEND (EMAIL)
 RESEND_API_KEY=your-resend-api-key
 
-# THEME & COLORS
-NEXT_PUBLIC_PRIMARY_HUE=0
-NEXT_PUBLIC_SECONDARY_HUE=240
+# MAPS
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-api-key-here
 
 # APPLICATION
 NEXT_PUBLIC_WHATSAPP_NUMBER=+233XXXXXXXXX
@@ -142,26 +165,33 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 ### Get Supabase Credentials
-1. Go to supabase.com, create a project
-2. Go to Settings  API
-3. Copy the URLs and keys to .env.local
+
+1. Go to [supabase.com](https://supabase.com) and create a project
+2. Navigate to **Settings** → **API**
+3. Copy the URLs and keys
+4. Paste into `.env.local`
 
 ### Get Cloudinary Credentials
-1. Go to cloudinary.com, create account
-2. Go to Dashboard
-3. Copy Cloud Name, API Key, API Secret
-4. Create upload preset named \walkend_weekend\ (Unsigned mode)
+
+1. Go to [cloudinary.com](https://cloudinary.com) and create an account
+2. Go to **Dashboard**
+3. Copy **Cloud Name**, **API Key**, **API Secret**
+4. Create an upload preset named `walkend_weekend` (set to **Unsigned** mode)
 
 ### Get Resend API Key
-1. Go to resend.com, create account
-2. Create API key
-3. Copy to RESEND_API_KEY
+
+1. Go to [resend.com](https://resend.com) and create an account
+2. Go to **API Keys**
+3. Create a new key and copy to `RESEND_API_KEY`
 
 ---
 
 ## Database Setup
 
-### Create Users Table
+Run these SQL scripts in your Supabase SQL Editor to create all tables.
+
+### Users Table
+
 ```sql
 CREATE TABLE public.users (
   id UUID NOT NULL PRIMARY KEY DEFAULT auth.uid(),
@@ -187,14 +217,14 @@ CREATE POLICY "Users can update own profile"
 
 CREATE POLICY "Only admins can change roles"
   ON public.users FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'))
-  WITH CHECK (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
+  USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 
 CREATE INDEX idx_users_email ON public.users(email);
 CREATE INDEX idx_users_role ON public.users(role);
 ```
 
-### Create Events Table
+### Events Table
+
 ```sql
 CREATE TABLE public.events (
   id UUID NOT NULL PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
@@ -235,7 +265,8 @@ CREATE INDEX idx_events_date ON public.events(date DESC);
 CREATE INDEX idx_events_created_by ON public.events(created_by);
 ```
 
-### Create Merchandise Table
+### Merchandise Table
+
 ```sql
 CREATE TABLE public.merchandise (
   id UUID NOT NULL PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
@@ -272,7 +303,8 @@ CREATE POLICY "Admins can delete merchandise"
 CREATE INDEX idx_merchandise_created_by ON public.merchandise(created_by);
 ```
 
-### Create Gallery Images Table
+### Gallery Images Table
+
 ```sql
 CREATE TABLE public.gallery_images (
   id UUID NOT NULL PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
@@ -302,7 +334,8 @@ CREATE POLICY "Admins can delete images"
 CREATE INDEX idx_gallery_event_id ON public.gallery_images(event_id);
 ```
 
-### Create Blog Posts Table
+### Blog Posts Table
+
 ```sql
 CREATE TABLE public.blog_posts (
   id UUID NOT NULL PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
@@ -341,7 +374,8 @@ CREATE INDEX idx_blog_slug ON public.blog_posts(slug);
 CREATE INDEX idx_blog_published ON public.blog_posts(published);
 ```
 
-### Create FAQs Table
+### FAQs Table
+
 ```sql
 CREATE TABLE public.faqs (
   id UUID NOT NULL PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
@@ -367,7 +401,8 @@ CREATE POLICY "Admins can manage FAQs"
 CREATE INDEX idx_faqs_order ON public.faqs(order_index);
 ```
 
-### Create Training Tips Table
+### Training Tips Table
+
 ```sql
 CREATE TABLE public.training_tips (
   id UUID NOT NULL PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
@@ -394,7 +429,8 @@ CREATE POLICY "Admins can manage training tips"
 CREATE INDEX idx_training_category ON public.training_tips(category);
 ```
 
-### Create Event Registrations Table
+### Event Registrations Table
+
 ```sql
 CREATE TABLE public.event_registrations (
   id UUID NOT NULL PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
@@ -428,328 +464,281 @@ CREATE INDEX idx_registration_user_id ON public.event_registrations(user_id);
 
 ---
 
-## External Services
+##  External Services
 
-### 1. Supabase Setup
+### Supabase Setup
 
-#### Create Project
-1. Visit supabase.com
-2. Create new project (region: Europe recommended for Ghana)
+1. Go to [supabase.com](https://supabase.com) and create a project
+2. Choose region (Europe recommended for Ghana)
 3. Save password securely
-4. Wait 2-3 minutes for setup
+4. Wait 2-3 minutes for setup to complete
 
-#### Configure Google OAuth
-1. Go to Google Cloud Console (console.cloud.google.com)
-2. Create new project
-3. Enable Google+ API
-4. Create OAuth 2.0 Client ID for Web
-5. Add redirect URI: https://your-project.supabase.co/auth/v1/callback
-6. Copy Client ID and Secret to Supabase Authentication  Providers  Google
+### Google OAuth Configuration
 
----
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project
+3. Enable **Google+ API**
+4. Create **OAuth 2.0 Client ID** for Web
+5. Add redirect URI: `https://your-project.supabase.co/auth/v1/callback`
+6. Copy Client ID and Secret
+7. In Supabase: Go to **Authentication** → **Providers** → **Google**
+8. Paste your credentials
 
-### 2. Cloudinary Setup
+### Cloudinary Setup
 
-#### Create Account
-1. Visit cloudinary.com
-2. Sign up with email
-3. Complete setup
+1. Go to [cloudinary.com](https://cloudinary.com) and create an account
+2. Go to **Settings** → **Upload**
+3. Create upload preset named `walkend_weekend`
+4. Set Type to **Unsigned**
+5. Save and use credentials in `.env.local`
 
-#### Configure Upload Preset
-1. Go to Settings  Upload
-2. Create preset named \walkend_weekend\
-3. Set Type: **Unsigned**
-4. Save
+### Resend Setup
 
-#### Get Credentials
-1. Go to Dashboard
-2. Copy Cloud Name, API Key, API Secret
+1. Go to [resend.com](https://resend.com) and create an account
+2. Go to **API Keys**
+3. Create new API key
+4. Add to `RESEND_API_KEY` in `.env.local`
 
----
+> **Note**: Free tier allows 100 emails/day with Resend's onboarding domain
 
-### 3. Resend Setup
+### Map Integration (OpenStreetMap)
 
-#### Create Account
-1. Visit resend.com
-2. Sign up with email
+No additional setup required! Maps use:
+- **OpenStreetMap** - Free mapping service (no API key needed)
+- **Leaflet** - Interactive map library
+- **Nominatim API** - Location search and geocoding
 
-#### Get API Key
-1. Go to API Keys
-2. Create new key
-3. Copy to RESEND_API_KEY in .env.local
-
-**Free Tier**: 100 emails/day with onboarding domain
-
----
-
-### 4. Map Integration (OpenStreetMap & Leaflet)
-
-#### How It Works
-The application uses OpenStreetMap and Leaflet for interactive maps with:
-- Event location display with markers
-- Location-based search with Nominatim API
-- Customizable map colors using CSS
-
-#### Setup
-No additional credentials required! OpenStreetMap is free to use.
-
-#### Features
-- **Interactive Maps**: Display events on maps with zoom/pan controls
-- **Location Search**: Search for locations using Nominatim API
-- **Marker Clustering**: Group nearby events visually
-- **Mobile Responsive**: Maps work on all screen sizes
-
-#### Map Components
-- `components/ui/map.tsx` - Base map component
-- `app/admin/events/map-picker.tsx` - Event location picker for admins
-- Map integration in event detail pages
-
-#### Environment Configuration
-```env
-# Map colors are configured via HUE variables in CSS
-NEXT_PUBLIC_PRIMARY_HUE=0
-NEXT_PUBLIC_SECONDARY_HUE=240
-```
-
----
-
-## Features
-
-**Core Functionality**
-- User authentication (email/password + Google OAuth)
-- Event creation, management, and registration with location mapping
-- Interactive map picker with OpenStreetMap integration for event locations
-- Merchandise catalog and ordering via WhatsApp
-- Photo gallery with Cloudinary image uploads and management
-- Blog posts with automatic slug generation and routing
-- Training tips and FAQs management
-- Email notifications via Resend API
-- Admin dashboard for content management
-- Ride hailing integration (Uber & Yango APIs)
+Features include:
+- Interactive event maps
+- Location search
+- Marker clustering
 - Mobile responsive design
-- Dark theme support
-
-**Security & Admin**
-- Role-based access control (Admin/User)
-- Row-level security policies in Supabase
-- Protected admin routes
-- User authentication with session management
-
-**Coming Soon**
-- Theme toggle (Light/Dark modes)
-- Payment integration
-- Advanced analytics
-- Live chat support
-- Mobile app
 
 ---
 
-## API Routes
+##  API Routes
 
 ### Public Routes
-- GET / - Homepage
-- GET /(public)/event-calendar - Events calendar
-- GET /(public)/gallery - Photo gallery
-- GET /(public)/merchandise - Products
-- GET /(public)/blog - Blog listing
-- GET /(public)/blog/[slug] - Blog detail
-- GET /(public)/training-tips - Training content
-- GET /(public)/faq - FAQ page
-- GET /(public)/about - About page
-- GET /(public)/join-run - Join form
+
+- `GET /` - Homepage
+- `GET /event-calendar` - Events calendar  
+- `GET /gallery` - Photo gallery
+- `GET /merchandise` - Products catalog
+- `GET /blog` - Blog listing
+- `GET /blog/[slug]` - Individual blog post
+- `GET /training-tips` - Training content
+- `GET /faq` - FAQ page
+- `GET /about` - About page
+- `GET /join-run` - Join run form
 
 ### Admin Routes (Protected)
-- GET /admin - Dashboard
-- GET /admin/events - Event management
-- GET /admin/merchandise - Merchandise management
-- GET /admin/gallery - Gallery management
-- GET /admin/blog - Blog management
-- GET /admin/faqs - FAQ management
-- GET /admin/training-tips - Training tips management
 
-### API Routes
-- POST /api/auth/create-user - Create user
-- POST /api/emails/send-event-notification - Event notification
-- POST /api/emails/send-blog-notification - Blog notification
-- POST /api/emails/send-merchandise-notification - Merchandise notification
-- POST /api/gallery/upload - Upload image
-- POST /api/cloudinary/delete - Delete image
+- `GET /admin` - Admin dashboard
+- `GET /admin/events` - Event management
+- `GET /admin/merchandise` - Merchandise management
+- `GET /admin/gallery` - Gallery management
+- `GET /admin/blog` - Blog management
+- `GET /admin/faqs` - FAQ management
+- `GET /admin/training-tips` - Training tips management
+
+### API Endpoints
+
+- `POST /api/auth/create-user` - Create user
+- `POST /api/emails/send-event-notification` - Event email
+- `POST /api/emails/send-blog-notification` - Blog email
+- `POST /api/emails/send-merchandise-notification` - Merchandise email
+- `POST /api/gallery/upload` - Upload image
+- `POST /api/cloudinary/delete` - Delete image
 
 ---
 
-## Deployment to Vercel
+##  Deployment
 
-### 1. Push to GitHub
+### Deploy to Vercel
+
+#### 1. Push to GitHub
+
 ```bash
 git add .
 git commit -m "Deploy ready"
 git push origin main
 ```
 
-### 2. Create Vercel Account
-Visit vercel.com, sign up with GitHub
+#### 2. Create Vercel Account
 
-### 3. Import Project
-1. Go to Dashboard
-2. Click Import Project
-3. Select repository
-4. Click Import
+Visit [vercel.com](https://vercel.com) and sign up with GitHub
 
-### 4. Add Environment Variables
-In Vercel  Settings  Environment Variables, add:
-- NEXT_PUBLIC_SUPABASE_URL
-- NEXT_PUBLIC_SUPABASE_ANON_KEY
-- SUPABASE_SERVICE_ROLE_KEY
-- NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-- CLOUDINARY_API_KEY
-- CLOUDINARY_API_SECRET
-- RESEND_API_KEY
-- NEXT_PUBLIC_WHATSAPP_NUMBER
-- NEXT_PUBLIC_APP_URL (your Vercel domain)
+#### 3. Import Project
 
-### 5. Deploy
-Click Deploy. Takes 2-5 minutes.
+1. Go to your Vercel Dashboard
+2. Click **Import Project**
+3. Select your repository
+4. Click **Import**
+
+#### 4. Add Environment Variables
+
+In Vercel **Settings** → **Environment Variables**, add all variables from `.env.local.example`:
+
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+CLOUDINARY_API_KEY
+CLOUDINARY_API_SECRET
+RESEND_API_KEY
+NEXT_PUBLIC_WHATSAPP_NUMBER
+NEXT_PUBLIC_APP_URL (your Vercel domain)
+```
+
+#### 5. Deploy
+
+Click **Deploy** - takes 2-5 minutes
+
+---
+
+##  Development
+
+### Install Dependencies
+
+```bash
+npm install
+```
+
+### Start Development Server
+
+```bash
+npm run dev
+```
+
+### Build for Production
+
+```bash
+npm run build
+```
+
+### Run Production Build
+
+```bash
+npm start
+```
+
+### Check for Errors
+
+```bash
+npm run lint
+npx tsc --noEmit
+```
 
 ---
 
 ## Troubleshooting
 
 ### "No NEXT_PUBLIC_SUPABASE_URL" Error
-- Check .env.local exists in project root
-- Restart dev server: Ctrl+C then npm run dev
-- No spaces in env values
+
+- Verify `.env.local` exists in project root
+- Restart dev server: `Ctrl+C` then `npm run dev`
+- Ensure no spaces in environment values
 
 ### Build Fails with TypeScript Errors
+
 ```bash
 npm run build
 npx tsc --noEmit
 ```
 
 ### Images Not Uploading to Cloudinary
-- Verify CLOUDINARY_API_KEY and SECRET in .env.local
-- Check upload preset is set to Unsigned
+
+- Verify `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET` in `.env.local`
+- Confirm upload preset is set to **Unsigned**
 - Restart dev server
 
 ### Email Notifications Not Sending
-- Verify RESEND_API_KEY is valid
+
+- Verify `RESEND_API_KEY` is valid
 - Check domain is verified in Resend dashboard
-- View Resend  Emails tab for logs
+- Visit **Resend** → **Emails** tab for delivery logs
 
 ### Session Expires Too Quickly
-- Known issue - see TODO.md
+
+- Known issue - see [TODO.md](./TODO.md)
 - Workaround: Refresh page
 
 ### Admin Pages Require Re-login
-- Known issue - see TODO.md
-- Workaround: Click refresh or re-login
 
-### Map Picker Not Working
-- Known issue - see TODO.md
-- Workaround: Enter latitude/longitude manually
+- Known issue - see [TODO.md](./TODO.md)
+- Workaround: Refresh or re-login
 
 ---
 
-## Known Issues
+##  Known Issues
 
-**See TODO.md for detailed known issues and development roadmap**
+See [TODO.md](./TODO.md) for detailed information and roadmap.
 
-1. **Session Persistence** - Sessions expire when returning to app after 5-10 minutes
-2. **Map Picker Search** - Clicking search results redirects to home page
-3. **Event Edit/Delete** - Partial implementation
-
----
-
-## Development
-
-### Install Dependencies
-\\\ash
-pnpm install
-\\\
-
-### Start Dev Server
-\\\ash
-pnpm dev
-\\\
-
-### Build for Production
-\\\ash
-pnpm build
-\\\
-
-### Run Production Build
-\\\ash
-pnpm start
-\\\
-
-### Check for Errors
-\\\ash
-pnpm lint
-npx tsc --noEmit
-\\\
+| Issue | Severity | Status |
+|-------|----------|--------|
+| Session persistence timeout | Medium | Known issue |
+| Map picker search | High | Workaround available |
+| Event edit/delete | Medium | Partial implementation |
 
 ---
 
-## Project Structure
+##  Project Structure
 
-`
+```
 app/
-   globals.css
-   layout.tsx
-   page.tsx
-   (public)/              # Public pages
-      about/
-      blog/
-      event-calendar/
-      faq/
-      gallery/
-      merchandise/
-      training-tips/
-      ...
-   admin/                 # Protected admin pages
-      events/
-      merchandise/
-      gallery/
-      blog/
-      ...
-   auth/                  # Auth pages
-      login/
-      signup/
-      callback/
-   api/                   # API routes
-       auth/
-       emails/
-       cloudinary/
-       gallery/
+├── globals.css
+├── layout.tsx
+├── page.tsx
+├── (public)/           # Public pages
+│   ├── about/
+│   ├── blog/
+│   ├── event-calendar/
+│   ├── faq/
+│   ├── gallery/
+│   ├── merchandise/
+│   └── training-tips/
+├── admin/              # Protected admin pages
+│   ├── layout.tsx
+│   ├── page.tsx
+│   ├── events/
+│   ├── merchandise/
+│   ├── gallery/
+│   └── blog/
+├── auth/               # Authentication pages
+│   ├── login/
+│   ├── signup/
+│   └── callback/
+└── api/                # API routes
+    ├── auth/
+    ├── emails/
+    ├── cloudinary/
+    └── gallery/
 
 components/
-   navigation.tsx
-   sections/              # Page sections
-   ui/                    # Shadcn UI components
+├── navigation.tsx
+├── theme-provider.tsx
+├── sections/           # Page sections
+└── ui/                 # Shadcn UI components
 
 lib/
-   auth-context.tsx       # Global auth state
-   supabase.ts           # Supabase client
-   cloudinary.ts         # Cloudinary config
-   email.ts              # Email templates
-   utils.ts              # Utilities
+├── auth-context.tsx    # Global auth state
+├── supabase.ts         # Supabase client
+├── cloudinary.ts       # Cloudinary config
+├── email.ts            # Email templates
+└── utils.ts            # Utility functions
 
-public/                      # Static assets
-`
-
----
-
-## Support
-
-For issues and known problems, see TODO.md
+public/                 # Static assets
+```
 
 ---
 
-## License
+##  License
 
-Proprietary - Do Not Share
+**Proprietary** - Do Not Share
 
 ---
 
-**Last Updated**: February 2, 2026
+**Last Updated**: February 6, 2026  
+**Status**: Production Ready  
 **Maintained By**: WalkEnd Weekend Team
-**Status**: Production Ready (with known issues documented in TODO.md)
