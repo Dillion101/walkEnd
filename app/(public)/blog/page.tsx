@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Navigation from '@/components/navigation';
 import Footer from '@/components/sections/footer';
 import { supabase } from '@/lib/supabase';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -122,10 +123,16 @@ export default function BlogPage() {
                       {post.featured_image && (
                         <div className="relative h-48 md:h-auto md:col-span-1">
                           <Image
-                            src={post.featured_image}
+                            src={optimizeCloudinaryUrl(post.featured_image, {
+                              width: 400,
+                              height: 300,
+                              quality: 'auto',
+                              format: 'auto'
+                            })}
                             alt={post.title}
                             fill
                             className="object-cover"
+                            loading="lazy"
                           />
                         </div>
                       )}

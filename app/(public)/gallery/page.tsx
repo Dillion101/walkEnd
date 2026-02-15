@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/sections/footer'
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary'
 
 interface GalleryImage {
   id: string
@@ -118,10 +119,16 @@ export default function GalleryPage() {
                 {filteredImages.map(image => (
                   <Card key={image.id} className="overflow-hidden hover:shadow-xl hover:shadow-orange-500/20 transition-all bg-gray-900 border-gray-800">
                     <div className="relative h-64 bg-gray-800">
-                      <img
-                        src={image.image_url}
+                      <Image
+                        src={optimizeCloudinaryUrl(image.image_url || '/placeholder.svg', {
+                          width: 500,
+                          quality: 'auto',
+                          format: 'auto'
+                        })}
                         alt={image.caption || 'Gallery image'}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform"
+                        fill
+                        className="object-cover hover:scale-105 transition-transform"
+                        loading="lazy"
                       />
                     </div>
                     {image.caption && (

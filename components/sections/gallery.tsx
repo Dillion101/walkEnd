@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary'
 
 interface GalleryImage {
   id: string
@@ -107,10 +108,15 @@ export default function Gallery() {
           {/* Featured Image */}
           <div className="relative aspect-video overflow-hidden mb-8 group animate-scale-in" key={activeIndex}>
             <Image
-              src={images[activeIndex]?.image_url || "/placeholder.svg"}
+              src={optimizeCloudinaryUrl(images[activeIndex]?.image_url || "/placeholder.svg", {
+                width: 1200,
+                quality: 'auto',
+                format: 'auto'
+              })}
               alt={images[activeIndex]?.caption || "Gallery image"}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-500"
+              priority={activeIndex === 0}
             />
             <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
 
@@ -180,10 +186,15 @@ export default function Gallery() {
                 }}
               >
                 <Image
-                  src={img.image_url || "/placeholder.svg"}
+                  src={optimizeCloudinaryUrl(img.image_url || "/placeholder.svg", {
+                    width: 400,
+                    quality: 'auto',
+                    format: 'auto'
+                  })}
                   alt={img.caption || 'Gallery image'}
                   fill
                   className="object-cover group-hover:scale-110 transition-transform duration-500"
+                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                   {img.caption && (

@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Trash2, Plus } from 'lucide-react'
-import { uploadToCloudinary } from '@/lib/cloudinary'
+import { uploadToCloudinary, optimizeCloudinaryUrl } from '@/lib/cloudinary'
 
 interface GalleryImage {
   id: string
@@ -284,7 +284,11 @@ export default function GalleryPage() {
             <Card key={image.id} className="overflow-hidden">
               <CardContent className="p-0 relative group">
                 <img
-                  src={image.image_url}
+                  src={optimizeCloudinaryUrl(image.image_url, {
+                    width: 400,
+                    quality: 'auto',
+                    format: 'auto'
+                  })}
                   alt={image.caption}
                   className="w-full h-32 object-cover"
                 />

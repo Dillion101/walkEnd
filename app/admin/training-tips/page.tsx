@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Trash2, Edit2, Plus } from 'lucide-react'
-import { uploadToCloudinary } from '@/lib/cloudinary'
+import { uploadToCloudinary, optimizeCloudinaryUrl } from '@/lib/cloudinary'
 
 interface TrainingTip {
   id: string
@@ -321,7 +321,11 @@ export default function TrainingTipsPage() {
               <CardContent className="pt-4">
                 {tip.image_url && (
                   <img
-                    src={tip.image_url}
+                    src={optimizeCloudinaryUrl(tip.image_url, {
+                      width: 400,
+                      quality: 'auto',
+                      format: 'auto'
+                    })}
                     alt={tip.title}
                     className="w-full h-40 rounded object-cover mb-3"
                   />

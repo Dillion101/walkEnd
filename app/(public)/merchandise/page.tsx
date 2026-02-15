@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary'
 import { MessageCircle } from 'lucide-react'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/sections/footer'
@@ -103,10 +104,16 @@ Please confirm availability and delivery options.`
                   {/* Image */}
                   <div className="relative aspect-square overflow-hidden bg-gray-900">
                     <Image
-                      src={item.image_url || "/placeholder.svg"}
+                      src={optimizeCloudinaryUrl(item.image_url || "/placeholder.svg", {
+                        width: 400,
+                        height: 400,
+                        quality: 'auto',
+                        format: 'auto'
+                      })}
                       alt={item.name}
                       fill
                       className="object-cover hover:scale-110 transition-transform duration-500"
+                      loading="lazy"
                     />
                   </div>
 

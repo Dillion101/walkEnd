@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import Link from 'next/link'
-import { Menu, X, Home, Calendar, ShoppingBag, Image as ImageIcon, BookOpen, HelpCircle, Lightbulb } from 'lucide-react'
+import { Menu, X, Home, Calendar, ShoppingBag, Image as ImageIcon, BookOpen, HelpCircle, Lightbulb, ChevronLeft, ChevronRight } from 'lucide-react'
 import Image from 'next/image'
 
 export default function AdminLayout({
@@ -25,6 +25,8 @@ export default function AdminLayout({
       setIsMobile(window.innerWidth < 768)
       if (window.innerWidth < 768) {
         setSidebarOpen(false)
+      } else {
+        setSidebarOpen(true) // Default to expanded on desktop
       }
     }
     checkMobile()
@@ -87,7 +89,7 @@ export default function AdminLayout({
             </Link>
           )}
           {!sidebarOpen && !isMobile && (
-            <Link href="/admin">
+            <Link href="/admin" className="mx-auto">
               <Image
                 src="/icon.svg"
                 alt="Logo"
@@ -96,12 +98,25 @@ export default function AdminLayout({
               />
             </Link>
           )}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1 hover:bg-background rounded shrink-0 md:hidden"
-          >
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+          {/* Desktop toggle button - always visible */}
+          {!isMobile && (
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-1 hover:bg-background rounded shrink-0"
+              title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              {sidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+            </button>
+          )}
+          {/* Mobile toggle button */}
+          {isMobile && (
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-1 hover:bg-background rounded shrink-0"
+            >
+              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          )}
         </div>
 
         <nav className="flex-1 p-4 space-y-2">

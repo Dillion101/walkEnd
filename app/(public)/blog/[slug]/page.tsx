@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Navigation from '@/components/navigation';
 import Footer from '@/components/sections/footer';
 import { supabase } from '@/lib/supabase';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, User, ArrowLeft } from 'lucide-react';
@@ -113,10 +114,16 @@ export default function BlogDetailPage() {
         {post.featured_image && (
           <div className="relative h-96 mb-8 rounded-lg overflow-hidden">
             <Image
-              src={post.featured_image}
+              src={optimizeCloudinaryUrl(post.featured_image, {
+                width: 800,
+                height: 500,
+                quality: 'auto',
+                format: 'auto'
+              })}
               alt={post.title}
               fill
               className="object-cover"
+              priority
             />
           </div>
         )}

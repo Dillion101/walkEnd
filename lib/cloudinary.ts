@@ -79,3 +79,43 @@ export async function deleteImageFromCloudinary(imageUrlOrPublicId: string): Pro
     console.error('Error in deleteImageFromCloudinary:', error)
   }
 }
+
+
+/**
+ * Transforms a Cloudinary URL with optimizations to prevent memory crashes
+ * Reduces image size significantly without quality loss
+ */
+export function optimizeCloudinaryUrl(
+  url: string,
+  options?: {
+    width?: number
+    height?: number
+    quality?: 'auto' | number
+    format?: 'auto' | 'webp' | 'jpg'
+  }
+): string {
+  if (!url || !url.includes('cloudinary.com')) return url
+
+  const {
+    width = 1200,
+    height = undefined,
+    quality = 'auto',
+    format = 'auto',
+  } = options || {}
+
+  // Insert transformation BEFORE the filename
+  // From: https://res.cloudinary.com/cloud_name/image/upload/v1234/image.jpg
+  // To:   https://res.cloudinary.com/cloud_name/image/upload/w_1200,q_auto,f_auto/v1234/image.jpg
+
+  const transformations = [
+    `w_${width}`,
+    height ? `h_${height}` : null,
+    `q_${quality}`,
+    `f_${format}`,
+    'c_fill', // Consistent sizing
+  ]
+    .filter(Boolean)
+    .join(',')
+
+  return url.replace(/\/image\/upload\//, `/image/upload/${transformations}/`)
+}

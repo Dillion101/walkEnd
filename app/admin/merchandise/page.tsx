@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Trash2, Edit2, Plus, AlertCircle, Loader2 } from 'lucide-react'
-import { uploadToCloudinary, deleteImageFromCloudinary } from '@/lib/cloudinary'
+import { uploadToCloudinary, deleteImageFromCloudinary, optimizeCloudinaryUrl } from '@/lib/cloudinary'
 
 interface Merchandise {
   id: string
@@ -352,7 +352,11 @@ export default function MerchandisePage() {
               <CardContent className="pt-4">
                 {item.image_url && (
                   <img
-                    src={item.image_url}
+                    src={optimizeCloudinaryUrl(item.image_url, {
+                      width: 400,
+                      quality: 'auto',
+                      format: 'auto'
+                    })}
                     alt={item.name}
                     className="w-full h-40 rounded object-cover mb-3"
                   />

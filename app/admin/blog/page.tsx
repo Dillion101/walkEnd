@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Trash2, Edit2, Plus, AlertCircle } from 'lucide-react'
-import { uploadToCloudinary, deleteImageFromCloudinary } from '@/lib/cloudinary'
+import { uploadToCloudinary, deleteImageFromCloudinary, optimizeCloudinaryUrl } from '@/lib/cloudinary'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface BlogPost {
@@ -378,7 +378,11 @@ export default function BlogPage() {
                 <div className="flex gap-4">
                   {post.featured_image_url && (
                     <img
-                      src={post.featured_image_url}
+                      src={optimizeCloudinaryUrl(post.featured_image_url, {
+                        width: 200,
+                        quality: 'auto',
+                        format: 'auto'
+                      })}
                       alt={post.title}
                       className="w-24 h-24 rounded object-cover"
                     />

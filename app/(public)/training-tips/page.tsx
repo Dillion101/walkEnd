@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Navigation from '@/components/navigation';
 import Footer from '@/components/sections/footer';
 import { supabase } from '@/lib/supabase';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -158,10 +159,16 @@ export default function TrainingTipsPage() {
                   {tip.image && (
                     <div className="relative h-40 w-full">
                       <Image
-                        src={tip.image}
+                        src={optimizeCloudinaryUrl(tip.image, {
+                          width: 400,
+                          height: 250,
+                          quality: 'auto',
+                          format: 'auto'
+                        })}
                         alt={tip.title}
                         fill
                         className="object-cover"
+                        loading="lazy"
                       />
                     </div>
                   )}
