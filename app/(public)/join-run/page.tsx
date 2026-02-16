@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { RideHailing } from '@/components/ride-hailing';
-import { CheckCircle, AlertCircle, Calendar, Clock, MapPin } from 'lucide-react';
+import { CheckCircle, AlertCircle, Calendar, Clock, MapPin, Info } from 'lucide-react';
 
 interface Event {
   id: string;
@@ -163,10 +163,10 @@ export default function JoinRunPage() {
 
   if (isLoading || eventsLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading events...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading events...</p>
         </div>
       </div>
     );
@@ -179,101 +179,128 @@ export default function JoinRunPage() {
   return (
     <>
       <Navigation />
-      <main className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black pt-20 py-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-8">
-              <div className="flex items-center gap-3 mb-4 flex-wrap">
-                <img src="/icon.svg" alt="WalkEnd WeekEnd" className="w-8 h-8" />
-                <h1 className="text-3xl sm:text-4xl font-bold text-white">Join a Run</h1>
+      <main className="min-h-screen bg-background pt-24 pb-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="mb-8 sm:mb-12">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-display text-white mb-3">
+              Join a Run
+            </h1>
+            <p className="text-gray-400 text-base sm:text-lg max-w-2xl">
+              Register for upcoming runs and connect with our running community
+            </p>
+          </div>
+
+          {/* Alert Messages */}
+          {message && (
+            <Alert 
+              className={`mb-6 sm:mb-8 ${
+                message.type === 'success' 
+                  ? 'bg-green-500/10 border-green-500/50' 
+                  : 'bg-red-500/10 border-red-500/50'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                {message.type === 'success' ? (
+                  <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                )}
+                <AlertDescription className={message.type === 'success' ? 'text-green-200' : 'text-red-200'}>
+                  {message.text}
+                </AlertDescription>
               </div>
-              <p className="text-gray-400 text-base sm:text-lg">Register for upcoming runs and connect with our running community</p>
+            </Alert>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+            {/* Registration Form - Left/Top */}
+            <div className="lg:col-span-2">
+              <Card className="p-6 sm:p-8 bg-card border-border">
+                <h2 className="text-xl sm:text-2xl font-bold font-display text-white mb-6">
+                  Event Registration
+                </h2>
+              
+                {events.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Calendar className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                    <p className="text-gray-400 text-lg mb-2">No upcoming events</p>
+                    <p className="text-gray-500 text-sm">Check back soon for new running events</p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Event Selection */}
+                    <div>
+                      <label htmlFor="event-select" className="block text-sm font-medium text-gray-300 mb-2">
+                        Select Event <span className="text-accent">*</span>
+                      </label>
+                      <select
+                        id="event-select"
+                        value={selectedEventId}
+                        onChange={(e) => setSelectedEventId(e.target.value)}
+                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all"
+                        required
+                      >
+                        <option value="">Choose an event...</option>
+                        {events.map((event) => (
+                          <option key={event.id} value={event.id}>
+                            {event.title} - {new Date(event.date).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Phone Number */}
+                    <div>
+                      <label htmlFor="phone-input" className="block text-sm font-medium text-gray-300 mb-2">
+                        Phone Number <span className="text-gray-500">(Optional)</span>
+                      </label>
+                      <Input
+                        id="phone-input"
+                        type="tel"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        placeholder="e.g., +233 24 123 4567"
+                        className="w-full bg-background border-border text-white placeholder-gray-500 focus:ring-accent focus:border-accent h-12"
+                      />
+                      <p className="text-xs text-gray-500 mt-2">
+                        We&apos;ll use this to send event updates and reminders
+                      </p>
+                    </div>
+
+                    {/* Submit Button */}
+                    <Button
+                      type="submit"
+                      disabled={loading || !selectedEventId}
+                      className="w-full bg-accent hover:bg-accent/90 text-background font-semibold py-3 h-auto rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? 'Registering...' : 'Register for Event'}
+                    </Button>
+                  </form>
+                )}
+              </Card>
             </div>
 
-            {message && (
-              <Alert className={`mb-6 border-2 ${message.type === 'success' ? 'bg-emerald-950 border-emerald-700' : 'bg-red-950 border-red-700'}`}>
-                <div className="flex items-start gap-3">
-                  {message.type === 'success' ? (
-                    <CheckCircle className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
-                  )}
-                  <AlertDescription className={message.type === 'success' ? 'text-emerald-200' : 'text-red-200'}>
-                    {message.text}
-                  </AlertDescription>
-                </div>
-              </Alert>
-            )}
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-              {/* Form Section */}
-              <Card className="p-4 sm:p-6 bg-gray-950 border border-gray-800 rounded-xl shadow-lg">
-                <h2 className="text-lg sm:text-xl font-semibold text-white mb-6">Register for an Event</h2>
-              
-              {events.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-400">No upcoming events at this time.</p>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Select Event *
-                    </label>
-                    <select
-                      value={selectedEventId}
-                      onChange={(e) => setSelectedEventId(e.target.value)}
-                      className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
-                      aria-label="Select an event to join"
-                      required
-                    >
-                      <option value="">Choose an event...</option>
-                      {events.map((event) => (
-                        <option key={event.id} value={event.id}>
-                          {event.title} - {new Date(event.date).toLocaleDateString()}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Phone Number (Optional)
-                    </label>
-                    <Input
-                      type="tel"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      placeholder="e.g., +233 24 123 4567"
-                      className="w-full bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:ring-orange-500 focus:border-transparent"
-                    />
-                    <p className="text-xs text-gray-500 mt-2">
-                      We&apos;ll use this to send event updates and reminders
-                    </p>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={loading || !selectedEventId}
-                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? 'Registering...' : 'Register for Event'}
-                  </Button>
-                </form>
-              )}
-            </Card>
-
-            {/* Event Details Section */}
-            <div className="space-y-4">
+            {/* Event Details & Info - Right/Bottom */}
+            <div className="lg:col-span-1 space-y-6">
+              {/* Event Details Card */}
               {selectedEvent ? (
-                <Card className="p-4 sm:p-6 bg-gradient-to-br from-gray-900 to-gray-950 border border-orange-900/30 rounded-xl shadow-lg">
-                  <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 break-words">{selectedEvent.title}</h3>
-                  <div className="space-y-3 sm:space-y-4">
-                    <div className="flex items-start gap-3 pb-3 border-b border-gray-800">
-                      <Calendar className="w-5 h-5 text-orange-500 mt-0.5 shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-xs font-medium text-gray-400 uppercase">Date</p>
-                        <p className="text-gray-200 font-medium text-sm break-words">
+                <Card className="p-6 bg-card border-border">
+                  <h3 className="text-lg font-bold text-white mb-4 line-clamp-2">
+                    {selectedEvent.title}
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    {/* Date */}
+                    <div className="flex items-start gap-3">
+                      <Calendar className="w-5 h-5 text-accent mt-0.5 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-gray-400 uppercase mb-1">Date</p>
+                        <p className="text-gray-200 text-sm">
                           {new Date(selectedEvent.date).toLocaleDateString('en-US', {
                             weekday: 'long',
                             year: 'numeric',
@@ -284,28 +311,43 @@ export default function JoinRunPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-start gap-3 pb-3 border-b border-gray-800">
-                      <Clock className="w-5 h-5 text-orange-500 mt-0.5 shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-xs font-medium text-gray-400 uppercase">Time</p>
-                        <p className="text-gray-200 font-medium text-sm">{selectedEvent.time || new Date(selectedEvent.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
+                    {/* Time */}
+                    <div className="flex items-start gap-3">
+                      <Clock className="w-5 h-5 text-accent mt-0.5 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-gray-400 uppercase mb-1">Time</p>
+                        <p className="text-gray-200 text-sm">
+                          {selectedEvent.time || new Date(selectedEvent.date).toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </p>
                       </div>
                     </div>
 
-                    <div className="flex items-start gap-3 pb-3 border-b border-gray-800">
-                      <MapPin className="w-5 h-5 text-orange-500 mt-0.5 shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-xs font-medium text-gray-400 uppercase">Location</p>
-                        <p className="text-gray-200 font-medium text-sm break-words">{selectedEvent.location_name}</p>
+                    {/* Location */}
+                    <div className="flex items-start gap-3">
+                      <MapPin className="w-5 h-5 text-accent mt-0.5 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-gray-400 uppercase mb-1">Location</p>
+                        <p className="text-gray-200 text-sm break-words">
+                          {selectedEvent.location_name}
+                        </p>
                       </div>
                     </div>
 
-                    <div className="pt-3">
-                      <p className="text-xs font-medium text-gray-400 uppercase mb-2">Description</p>
-                      <p className="text-gray-300 text-sm leading-relaxed">{selectedEvent.description}</p>
-                    </div>
+                    {/* Description */}
+                    {selectedEvent.description && (
+                      <div className="pt-4 border-t border-border">
+                        <p className="text-xs font-medium text-gray-400 uppercase mb-2">Description</p>
+                        <p className="text-gray-300 text-sm leading-relaxed">
+                          {selectedEvent.description}
+                        </p>
+                      </div>
+                    )}
 
-                    <div className="pt-4 border-t border-gray-800">
+                    {/* Ride Hailing */}
+                    <div className="pt-4 border-t border-border">
                       <RideHailing
                         latitude={selectedEvent.latitude ?? null}
                         longitude={selectedEvent.longitude ?? null}
@@ -316,41 +358,42 @@ export default function JoinRunPage() {
                   </div>
                 </Card>
               ) : (
-                <Card className="p-6 text-center bg-gray-950 border border-gray-800 rounded-xl">
+                <Card className="p-8 text-center bg-card border-border">
+                  <Info className="w-10 h-10 text-gray-600 mx-auto mb-3" />
                   <p className="text-gray-400 text-sm">Select an event to see details</p>
                 </Card>
               )}
 
-              <Card className="p-5 bg-gradient-to-br from-orange-950 to-orange-900 border border-orange-800 rounded-xl shadow-lg">
-                <h4 className="font-semibold text-orange-100 mb-3 flex items-center gap-2 text-sm sm:text-base">
-                  <CheckCircle className="w-4 h-4" />
+              {/* What to Expect Card */}
+              <Card className="p-6 bg-card border-border">
+                <h4 className="font-bold text-white mb-4 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-accent" />
                   After Registration
                 </h4>
-                <ul className="text-xs sm:text-sm text-orange-100 space-y-2">
-                  <li className="flex items-center gap-2">
-                    <span className="text-orange-400">✓</span>
-                    Confirmation email sent to your inbox
+                <ul className="text-sm text-gray-300 space-y-3">
+                  <li className="flex items-start gap-3">
+                    <span className="text-accent mt-0.5">✓</span>
+                    <span>Confirmation email sent to your inbox</span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-orange-400">✓</span>
-                    Event updates and reminders via email
+                  <li className="flex items-start gap-3">
+                    <span className="text-accent mt-0.5">✓</span>
+                    <span>Event updates and reminders via email</span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-orange-400">✓</span>
-                    Add to your calendar
+                  <li className="flex items-start gap-3">
+                    <span className="text-accent mt-0.5">✓</span>
+                    <span>Add event to your calendar</span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-orange-400">✓</span>
-                    Connect with other runners
+                  <li className="flex items-start gap-3">
+                    <span className="text-accent mt-0.5">✓</span>
+                    <span>Connect with other runners</span>
                   </li>
                 </ul>
               </Card>
             </div>
           </div>
         </div>
-      </div>
-    </main>
-    <Footer />
+      </main>
+      <Footer />
     </>
   );
 }

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import { Trash2, Edit2, Plus, AlertCircle, Users, Download, X } from 'lucide-react'
+import { Trash2, Edit2, Plus, AlertCircle, Users, Download, X, Search, Filter, SortAsc, SortDesc } from 'lucide-react'
 import { uploadToCloudinary, deleteImageFromCloudinary } from '@/lib/cloudinary'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AdminEventRouteButton } from '@/components/admin-event-route-button'
@@ -42,9 +42,14 @@ interface Registration {
   }
 }
 
+type SortField = 'date' | 'title' | 'created_at' | 'location_name'
+type SortOrder = 'asc' | 'desc'
+type FilterStatus = 'all' | 'upcoming' | 'past'
+
 export default function EventsPage() {
   const { user } = useAuth()
   const [events, setEvents] = useState<Event[]>([])
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [isOpen, setIsOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -52,6 +57,12 @@ export default function EventsPage() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
+  
+  // Sorting and Filtering state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortField, setSortField] = useState<SortField>('date')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
   
   // Registrations state
   const [registrationsOpen, setRegistrationsOpen] = useState(false)
@@ -75,6 +86,72 @@ export default function EventsPage() {
   useEffect(() => {
     fetchEvents()
   }, [])
+
+  // Apply filters and sorting whenever events, search, sort, or filter changes
+  useEffect(() => {
+    let result = [...events]
+
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter(event => 
+        event.title.toLowerCase().includes(query) ||
+        event.description.toLowerCase().includes(query) ||
+        event.location_name.toLowerCase().includes(query)
+      )
+    }
+
+    // Apply status filter
+    const now = new Date()
+    if (filterStatus === 'upcoming') {
+      result = result.filter(event => new Date(event.date) >= now)
+    } else if (filterStatus === 'past') {
+      result = result.filter(event => new Date(event.date) < now)
+    }
+
+    // Apply sorting
+    result.sort((a, b) => {
+      let compareA: any
+      let compareB: any
+
+      switch (sortField) {
+        case 'date':
+          compareA = new Date(a.date).getTime()
+          compareB = new Date(b.date).getTime()
+          break
+        case 'title':
+          compareA = a.title.toLowerCase()
+          compareB = b.title.toLowerCase()
+          break
+        case 'created_at':
+          compareA = new Date(a.created_at).getTime()
+          compareB = new Date(b.created_at).getTime()
+          break
+        case 'location_name':
+          compareA = a.location_name.toLowerCase()
+          compareB = b.location_name.toLowerCase()
+          break
+        default:
+          return 0
+      }
+
+      if (compareA < compareB) return sortOrder === 'asc' ? -1 : 1
+      if (compareA > compareB) return sortOrder === 'asc' ? 1 : -1
+      return 0
+    })
+
+    setFilteredEvents(result)
+  }, [events, searchQuery, sortField, sortOrder, filterStatus])
+
+  // Toggle sort order for a field
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortOrder('asc')
+    }
+  }
 
   // Fetch registrations for an event
   async function fetchRegistrations(eventId: string) {
@@ -494,16 +571,119 @@ export default function EventsPage() {
         </Dialog>
       </div>
 
+      {/* Search, Filter, and Sort Controls */}
+      <Card className="p-4">
+        <div className="space-y-4">
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              type="text"
+              placeholder="Search events by title, description, or location..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Status Filter */}
+            <div className="flex-1">
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Filter by Status</label>
+              <div className="flex gap-2">
+                <Button
+                  variant={filterStatus === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFilterStatus('all')}
+                  className={filterStatus === 'all' ? 'bg-orange-500 hover:bg-orange-600' : ''}
+                >
+                  All ({events.length})
+                </Button>
+                <Button
+                  variant={filterStatus === 'upcoming' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFilterStatus('upcoming')}
+                  className={filterStatus === 'upcoming' ? 'bg-orange-500 hover:bg-orange-600' : ''}
+                >
+                  Upcoming ({events.filter(e => new Date(e.date) >= new Date()).length})
+                </Button>
+                <Button
+                  variant={filterStatus === 'past' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFilterStatus('past')}
+                  className={filterStatus === 'past' ? 'bg-orange-500 hover:bg-orange-600' : ''}
+                >
+                  Past ({events.filter(e => new Date(e.date) < new Date()).length})
+                </Button>
+              </div>
+            </div>
+
+            {/* Sort Options */}
+            <div className="flex-1">
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Sort by</label>
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  variant={sortField === 'date' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleSort('date')}
+                  className={`flex items-center gap-1 ${sortField === 'date' ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
+                >
+                  Date
+                  {sortField === 'date' && (sortOrder === 'asc' ? <SortAsc className="w-3 h-3" /> : <SortDesc className="w-3 h-3" />)}
+                </Button>
+                <Button
+                  variant={sortField === 'title' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleSort('title')}
+                  className={`flex items-center gap-1 ${sortField === 'title' ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
+                >
+                  Title
+                  {sortField === 'title' && (sortOrder === 'asc' ? <SortAsc className="w-3 h-3" /> : <SortDesc className="w-3 h-3" />)}
+                </Button>
+                <Button
+                  variant={sortField === 'location_name' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleSort('location_name')}
+                  className={`flex items-center gap-1 ${sortField === 'location_name' ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
+                >
+                  Location
+                  {sortField === 'location_name' && (sortOrder === 'asc' ? <SortAsc className="w-3 h-3" /> : <SortDesc className="w-3 h-3" />)}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Results Count */}
+          <div className="text-sm text-muted-foreground">
+            Showing {filteredEvents.length} of {events.length} events
+          </div>
+        </div>
+      </Card>
+
       {/* Events List */}
       <div className="grid gap-4">
-        {events.length === 0 ? (
+        {filteredEvents.length === 0 ? (
           <Card>
             <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground">No events yet. Create your first event!</p>
+              <p className="text-center text-muted-foreground">
+                {events.length === 0 
+                  ? 'No events yet. Create your first event!' 
+                  : 'No events match your search criteria.'}
+              </p>
             </CardContent>
           </Card>
         ) : (
-          events.map((event) => (
+          filteredEvents.map((event) => (
             <Card key={event.id}>
               <CardContent className="pt-6">
                 <div className="flex flex-col sm:flex-row gap-4">

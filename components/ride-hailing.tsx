@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { Copy, CheckCircle, Smartphone } from 'lucide-react'
+import { Copy, CheckCircle, Car } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface RideHailingProps {
   latitude: number | null
@@ -51,8 +52,7 @@ export function RideHailing({ latitude, longitude, eventTitle, eventLocation }: 
     }
   }
 
-  /** Yango - handles both mobile app and web */
-/** Yango - Handles App and Web automatically via Universal Link */
+  /** Yango - Handles App and Web automatically via Universal Link */
   const openYango = () => {
     if (!hasCoords) return
     
@@ -67,55 +67,78 @@ export function RideHailing({ latitude, longitude, eventTitle, eventLocation }: 
 
   return (
     <div className="space-y-3">
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Book a ride to the event</p>
+      <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Get to the Event</p>
 
       {/* Copy Location - always shown (coords first if valid, else name) */}
-      <button
+      <Button
+        type="button"
+        variant="outline"
         onClick={copyLocation}
-        className="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 text-sm py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 border border-gray-700"
+        className="w-full bg-background hover:bg-card border-border hover:border-accent/50 transition-all h-11 text-sm"
       >
         {copied ? (
           <>
-            <CheckCircle size={16} className="text-green-500" />
-            <span className="text-green-400">Copied!</span>
+            <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+            <span className="text-green-400">Location Copied!</span>
           </>
         ) : (
           <>
-            <Copy size={16} />
+            <Copy className="w-4 h-4 mr-2" />
             <span>Copy Location</span>
           </>
         )}
-      </button>
+      </Button>
 
-      {/* Uber - only when valid coordinates */}
+      {/* Ride Options - only when valid coordinates */}
       {hasCoords && (
-        <div className="border border-gray-700 rounded-lg p-3 hover:border-orange-500 transition-colors">
-          <div className="flex items-center justify-center h-8 mb-3 bg-black rounded">
-            <Image src="/uber.jpg" alt="Uber" width={80} height={32} className="h-8 w-auto object-contain" />
-          </div>
-          <button
-            onClick={openUber}
-            className="w-full bg-black hover:bg-gray-900 text-white text-xs py-2 rounded transition-colors font-semibold flex items-center justify-center gap-1"
-          >
-            <Smartphone size={14} />
-            Book Ride
-          </button>
-        </div>
-      )}
+        <div className="space-y-2">
+          <p className="text-xs text-gray-500">Or book a ride</p>
+          
+          <div className="grid grid-cols-2 gap-2">
+            {/* Uber */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={openUber}
+              className="h-auto py-3 px-3 bg-background hover:bg-card border-border hover:border-accent/50 transition-all flex flex-col items-center gap-2"
+            >
+              <div className="w-full h-6 flex items-center justify-center">
+                <Image 
+                  src="/uber.jpg" 
+                  alt="Uber" 
+                  width={60} 
+                  height={24} 
+                  className="h-5 w-auto object-contain" 
+                />
+              </div>
+              <span className="text-xs font-medium flex items-center gap-1">
+                <Car className="w-3 h-3" />
+                Book Ride
+              </span>
+            </Button>
 
-      {/* Yango - only when valid coordinates */}
-      {hasCoords && (
-        <div className="border border-gray-700 rounded-lg p-3 hover:border-yellow-500 transition-colors">
-          <div className="flex items-center justify-center h-8 mb-3 bg-yellow-400 rounded">
-            <Image src="/yango.jpg" alt="Yango" width={80} height={32} className="h-8 w-auto object-contain" />
+            {/* Yango */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={openYango}
+              className="h-auto py-3 px-3 bg-background hover:bg-card border-border hover:border-accent/50 transition-all flex flex-col items-center gap-2"
+            >
+              <div className="w-full h-6 flex items-center justify-center">
+                <Image 
+                  src="/yango.png" 
+                  alt="Yango" 
+                  width={60} 
+                  height={24} 
+                  className="h-5 w-auto object-contain" 
+                />
+              </div>
+              <span className="text-xs font-medium flex items-center gap-1">
+                <Car className="w-3 h-3" />
+                Book Ride
+              </span>
+            </Button>
           </div>
-          <button
-            onClick={openYango}
-            className="w-full bg-yellow-600 hover:bg-yellow-700 text-white text-xs py-2 rounded transition-colors font-semibold flex items-center justify-center gap-1"
-          >
-            <Smartphone size={14} />
-            Book Ride
-          </button>
         </div>
       )}
     </div>

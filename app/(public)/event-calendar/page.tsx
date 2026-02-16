@@ -33,6 +33,7 @@ interface CalendarDay {
   isToday: boolean;
   dateString: string;
   hasRegisteredEvent: boolean;
+  hasPastEvent: boolean;
 }
 
 export default function EventCalendarPage() {
@@ -51,6 +52,15 @@ export default function EventCalendarPage() {
 
   // Check if user is registered for an event
   const isRegistered = (eventId: string) => registeredEventIds.has(eventId);
+
+  // Check if an event is in the past
+  const isPastEvent = (eventDate: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const eventDay = new Date(eventDate);
+    eventDay.setHours(0, 0, 0, 0);
+    return eventDay < today;
+  };
 
   // Detect mobile device
   useEffect(() => {
@@ -95,15 +105,13 @@ export default function EventCalendarPage() {
     window.open(yangoUniversalLink, '_blank');
   };
 
-  // Fetch events
+  // Fetch ALL events (past and future) - removed date filter
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const today = new Date().toISOString().split('T')[0];
         const { data, error } = await supabase
           .from('events')
           .select('*')
-          .gte('date', today)
           .order('date', { ascending: true });
 
         if (error) {
@@ -178,7 +186,8 @@ export default function EventCalendarPage() {
         isCurrentMonth: false,
         isToday: false,
         dateString: '',
-        hasRegisteredEvent: false
+        hasRegisteredEvent: false,
+        hasPastEvent: false
       });
     }
 
@@ -197,6 +206,7 @@ export default function EventCalendarPage() {
         }
         return isReg;
       });
+      const hasPastEvent = dayEvents.some(e => isPastEvent(e.date)) && dayEvents.length > 0;
 
       days.push({
         date: i,
@@ -204,7 +214,8 @@ export default function EventCalendarPage() {
         isCurrentMonth: true,
         isToday,
         dateString: dateStr,
-        hasRegisteredEvent
+        hasRegisteredEvent,
+        hasPastEvent
       });
     }
 
@@ -217,7 +228,8 @@ export default function EventCalendarPage() {
         isCurrentMonth: false,
         isToday: false,
         dateString: '',
-        hasRegisteredEvent: false
+        hasRegisteredEvent: false,
+        hasPastEvent: false
       });
     }
 
@@ -319,27 +331,46 @@ export default function EventCalendarPage() {
 
                   {/* Calendar Days */}
                   <div className="grid grid-cols-7 gap-1 sm:gap-2">
-                    {calendarDays.map((day, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => {
-                          if (day.isCurrentMonth && day.dateString) {
-                            setSelectedDate(day.dateString);
-                          }
-                        }}
-                        className={`
-                          aspect-square flex flex-col items-center justify-center rounded-lg font-semibold text-xs sm:text-sm
-                          transition-all duration-200 relative group
-                          ${!day.isCurrentMonth ? 'bg-card/50 text-gray-600 cursor-default' : ''}
-                          ${day.isCurrentMonth && !day.isToday && !day.events.length ? 'bg-card border border-border hover:border-accent hover:bg-card/80 text-white cursor-pointer' : ''}
-                          ${day.isToday ? 'bg-linear-to-br from-accent to-accent/80 text-background font-bold shadow-lg shadow-accent/50 ring-2 ring-accent/30' : ''}
-                          ${day.isCurrentMonth && day.events.length > 0 && !day.isToday && day.hasRegisteredEvent ? 'bg-linear-to-br from-green-500/20 to-green-600/20 border-2 border-green-400 text-white hover:from-green-500/30 hover:to-green-600/30 cursor-pointer' : ''}
-                          ${day.isCurrentMonth && day.events.length > 0 && !day.isToday && !day.hasRegisteredEvent ? 'bg-linear-to-br from-blue-500/20 to-blue-600/20 border-2 border-blue-400 text-white hover:from-blue-500/30 hover:to-blue-600/30 cursor-pointer' : ''}
-                        `}
-                      >
-                        <span>{day.date}</span>
-                      </button>
-                    ))}
+                    {calendarDays.map((day, idx) => {
+                      // Determine the day style based on priority
+                      let dayStyle = '';
+                      
+                      if (!day.isCurrentMonth) {
+                        dayStyle = 'bg-card/50 text-gray-600 cursor-default';
+                      } else if (day.isToday) {
+                        dayStyle = 'bg-linear-to-br from-accent to-accent/80 text-background font-bold shadow-lg shadow-accent/50 ring-2 ring-accent/30';
+                      } else if (day.hasPastEvent) {
+                        // Past events - gray/muted color
+                        dayStyle = 'bg-linear-to-br from-gray-500/20 to-gray-600/20 border-2 border-gray-500 text-gray-400 hover:from-gray-500/30 hover:to-gray-600/30 cursor-pointer';
+                      } else if (day.hasRegisteredEvent) {
+                        // Registered future events - green
+                        dayStyle = 'bg-linear-to-br from-green-500/20 to-green-600/20 border-2 border-green-400 text-white hover:from-green-500/30 hover:to-green-600/30 cursor-pointer';
+                      } else if (day.events.length > 0) {
+                        // Unregistered future events - blue
+                        dayStyle = 'bg-linear-to-br from-blue-500/20 to-blue-600/20 border-2 border-blue-400 text-white hover:from-blue-500/30 hover:to-blue-600/30 cursor-pointer';
+                      } else {
+                        // Empty day
+                        dayStyle = 'bg-card border border-border hover:border-accent hover:bg-card/80 text-white cursor-pointer';
+                      }
+
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            if (day.isCurrentMonth && day.dateString) {
+                              setSelectedDate(day.dateString);
+                            }
+                          }}
+                          className={`
+                            aspect-square flex flex-col items-center justify-center rounded-lg font-semibold text-xs sm:text-sm
+                            transition-all duration-200 relative group
+                            ${dayStyle}
+                          `}
+                        >
+                          <span>{day.date}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -355,11 +386,15 @@ export default function EventCalendarPage() {
                       <div className="w-5 h-5 sm:w-6 sm:h-6 bg-linear-to-br from-green-500/20 to-green-600/20 border-2 border-green-400 rounded flex items-center justify-center flex-shrink-0">
                         <Check className="w-3 h-3 text-green-400" />
                       </div>
-                      <span className="text-gray-300">Registered</span>
+                      <span className="text-gray-300">Registered (upcoming)</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="w-5 h-5 sm:w-6 sm:h-6 bg-linear-to-br from-blue-500/20 to-blue-600/20 border-2 border-blue-400 rounded flex-shrink-0"></div>
                       <span className="text-gray-300">Events scheduled</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 bg-linear-to-br from-gray-500/20 to-gray-600/20 border-2 border-gray-500 rounded flex-shrink-0"></div>
+                      <span className="text-gray-400">Past events</span>
                     </div>
                   </div>
                 </div>
@@ -383,120 +418,145 @@ export default function EventCalendarPage() {
                   </div>
                 ) : (
                   <div className="space-y-2 sm:space-y-3 max-h-96 overflow-y-auto pr-1 sm:pr-2">
-                    {(selectedDate ? getEventsForDate(selectedDate) : filteredEvents).map((event) => (
-                      <div
-                        key={event.id}
-                        className="p-3 sm:p-4 border border-border bg-background/50 rounded-lg hover:border-accent hover:bg-background/80 transition-all duration-200 group"
-                      >
-                        <h4 className="font-bold text-white text-xs sm:text-sm mb-2 sm:mb-3 group-hover:text-accent transition-colors line-clamp-2">
-                          {event.title}
-                        </h4>
-                        
-                        <div className="space-y-1 sm:space-y-2 mb-3 sm:mb-4">
-                          <div className="flex items-center gap-2 text-xs text-gray-400">
-                            <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-accent shrink-0" />
-                            <span className="text-xs">{new Date(event.date).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              weekday: 'short'
-                            })}</span>
+                    {(selectedDate ? getEventsForDate(selectedDate) : filteredEvents).map((event) => {
+                      const isEventPast = isPastEvent(event.date);
+                      
+                      return (
+                        <div
+                          key={event.id}
+                          className={`p-3 sm:p-4 border rounded-lg transition-all duration-200 group ${
+                            isEventPast 
+                              ? 'border-gray-600 bg-gray-900/30 opacity-75' 
+                              : 'border-border bg-background/50 hover:border-accent hover:bg-background/80'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <h4 className={`font-bold text-xs sm:text-sm mb-2 sm:mb-3 transition-colors line-clamp-2 flex-1 ${
+                              isEventPast ? 'text-gray-400' : 'text-white group-hover:text-accent'
+                            }`}>
+                              {event.title}
+                            </h4>
+                            {isEventPast && (
+                              <span className="text-[10px] sm:text-xs bg-gray-700/50 text-gray-400 px-2 py-0.5 rounded-full whitespace-nowrap">
+                                Past
+                              </span>
+                            )}
                           </div>
                           
-                          <div className="flex items-center gap-2 text-xs text-gray-400">
-                            <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-accent shrink-0" />
-                            <span className="line-clamp-2 text-xs">{event.location_name}</span>
+                          <div className="space-y-1 sm:space-y-2 mb-3 sm:mb-4">
+                            <div className="flex items-center gap-2 text-xs text-gray-400">
+                              <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-accent shrink-0" />
+                              <span className="text-xs">{new Date(event.date).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                weekday: 'short'
+                              })}</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 text-xs text-gray-400">
+                              <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-accent shrink-0" />
+                              <span className="line-clamp-2 text-xs">{event.location_name}</span>
+                            </div>
+
+                            {event.description && (
+                              <p className="text-xs text-gray-500 line-clamp-2 mt-1">{event.description}</p>
+                            )}
                           </div>
 
-                          {event.description && (
-                            <p className="text-xs text-gray-500 line-clamp-2 mt-1">{event.description}</p>
+                          {!isEventPast && (
+                            <>
+                              {isRegistered(event.id) ? (
+                                <div className="w-full bg-green-500/20 border border-green-500 text-green-400 text-xs font-semibold py-2 px-3 rounded-md flex items-center justify-center gap-2">
+                                  <CheckCircle className="w-3 h-3" />
+                                  <span className="text-xs">Registered</span>
+                                </div>
+                              ) : (
+                                <Link href={`/join-run?event=${event.id}`} className="block">
+                                  <Button className="w-full bg-accent hover:bg-accent/90 text-background text-xs font-semibold group-hover:shadow-lg group-hover:shadow-accent/50 transition-all py-2">
+                                    Register Now
+                                  </Button>
+                                </Link>
+                              )}
+                            </>
+                          )}
+
+                          {/* Copy Location Button - available for all events */}
+                          <Button
+                            variant="outline"
+                            className={`w-full mt-2 text-xs py-2 ${
+                              isEventPast 
+                                ? 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/50' 
+                                : 'border-gray-600 hover:border-accent hover:bg-accent/10'
+                            }`}
+                            onClick={() => copyEventLocation(event)}
+                          >
+                            {copiedEventId === event.id ? (
+                              <>
+                                <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
+                                <span className="text-green-400 text-xs">Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3 mr-1" />
+                                <span className="text-xs">Copy Location</span>
+                              </>
+                            )}
+                          </Button>
+
+                          {/* Show route + ride options if end location is set AND user is registered - only for future events */}
+                          {!isEventPast && hasValidEndLocation(event) && isRegistered(event.id) && (
+                            <div className="mt-2 grid grid-cols-3 gap-1 sm:gap-2">
+                              <Button 
+                                variant="outline" 
+                                className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1 py-2" 
+                                onClick={() => {
+                                  setSelectedEventForRoute(event);
+                                  setRouteViewerOpen(true);
+                                }}
+                                title="View route on map"
+                              >
+                                <Navigation2 className="w-3 h-3" />
+                                <span className="hidden sm:inline">Route</span>
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1 py-2"
+                                onClick={() => openUber(event)}
+                              >
+                                <Image src="/uber.jpg" alt="Uber" width={32} height={16} className="h-3 sm:h-4 w-auto object-contain" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1 py-2"
+                                onClick={() => openYango(event)}
+                              >
+                                <Image src="/yango.png" alt="Yango" width={32} height={16} className="h-3 sm:h-4 w-auto object-contain" />
+                              </Button>
+                            </div>
+                          )}
+
+                          {/* Show only ride options if end location not set but start location is valid AND user is registered - only for future events */}
+                          {!isEventPast && !hasValidEndLocation(event) && hasValidCoords(event.latitude, event.longitude) && isRegistered(event.id) && (
+                            <div className="mt-2 grid grid-cols-2 gap-1 sm:gap-2">
+                              <Button 
+                                variant="outline" 
+                                className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1 py-2"
+                                onClick={() => openUber(event)}
+                              >
+                                <Image src="/uber.jpg" alt="Uber" width={32} height={16} className="h-3 sm:h-4 w-auto object-contain" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1 py-2"
+                                onClick={() => openYango(event)}
+                              >
+                                <Image src="/yango.png" alt="Yango" width={32} height={16} className="h-3 sm:h-4 w-auto object-contain" />
+                              </Button>
+                            </div>
                           )}
                         </div>
-
-                        {isRegistered(event.id) ? (
-                          <div className="w-full bg-green-500/20 border border-green-500 text-green-400 text-xs font-semibold py-2 px-3 rounded-md flex items-center justify-center gap-2">
-                            <CheckCircle className="w-3 h-3" />
-                            <span className="text-xs">Registered</span>
-                          </div>
-                        ) : (
-                          <Link href={`/join-run?event=${event.id}`} className="block">
-                            <Button className="w-full bg-accent hover:bg-accent/90 text-background text-xs font-semibold group-hover:shadow-lg group-hover:shadow-accent/50 transition-all py-2">
-                              Register Now
-                            </Button>
-                          </Link>
-                        )}
-
-                        {/* Copy Location Button */}
-                        <Button
-                          variant="outline"
-                          className="w-full mt-2 text-xs border-gray-600 hover:border-accent hover:bg-accent/10 py-2"
-                          onClick={() => copyEventLocation(event)}
-                        >
-                          {copiedEventId === event.id ? (
-                            <>
-                              <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
-                              <span className="text-green-400 text-xs">Copied!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3 h-3 mr-1" />
-                              <span className="text-xs">Copy Location</span>
-                            </>
-                          )}
-                        </Button>
-
-                        {/* Show route + ride options if end location is set AND user is registered */}
-                        {hasValidEndLocation(event) && isRegistered(event.id) && (
-                          <div className="mt-2 grid grid-cols-3 gap-1 sm:gap-2">
-                            <Button 
-                              variant="outline" 
-                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1 py-2" 
-                              onClick={() => {
-                                setSelectedEventForRoute(event);
-                                setRouteViewerOpen(true);
-                              }}
-                              title="View route on map"
-                            >
-                              <Navigation2 className="w-3 h-3" />
-                              <span className="hidden sm:inline">Route</span>
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1 py-2"
-                              onClick={() => openUber(event)}
-                            >
-                              <Image src="/uber.jpg" alt="Uber" width={32} height={16} className="h-3 sm:h-4 w-auto object-contain" />
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1 py-2"
-                              onClick={() => openYango(event)}
-                            >
-                              <Image src="/yango.png" alt="Yango" width={32} height={16} className="h-3 sm:h-4 w-auto object-contain" />
-                            </Button>
-                          </div>
-                        )}
-
-                        {/* Show only ride options if end location not set but start location is valid AND user is registered */}
-                        {!hasValidEndLocation(event) && hasValidCoords(event.latitude, event.longitude) && isRegistered(event.id) && (
-                          <div className="mt-2 grid grid-cols-2 gap-1 sm:gap-2">
-                            <Button 
-                              variant="outline" 
-                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1 py-2"
-                              onClick={() => openUber(event)}
-                            >
-                              <Image src="/uber.jpg" alt="Uber" width={32} height={16} className="h-3 sm:h-4 w-auto object-contain" />
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              className="w-full text-xs border-accent/30 hover:border-accent/60 hover:bg-accent/10 text-accent flex items-center justify-center gap-1 py-2"
-                              onClick={() => openYango(event)}
-                            >
-                              <Image src="/yango.png" alt="Yango" width={32} height={16} className="h-3 sm:h-4 w-auto object-contain" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </Card>
